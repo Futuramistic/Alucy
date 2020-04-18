@@ -27,22 +27,20 @@ class myObjType {
 	int tlist[MAXT][3];      // triangle list
 	int fnlist[MAXT][3];     // fnext list for future (not this assignment)
 	double nlist[MAXT][3];   // storing triangle normals
-	double vnlist[MAXV][3];
-	std::vector<std::pair<int,int>> boundrylist;
-	bool boundry = false;
-	std::vector<std::set<int>> clist;
+	double vnlist[MAXV][3];  // storing vertex normals 
+	std::vector<std::pair<int,int>> boundrylist; //storing boundry edges
+	std::vector<std::set<int>> clist; //storing component lists
 	double lmax[3];          // the maximum coordinates of x,y,z
 	double lmin[3];          // the minimum coordinates of x,y,z
 
 	int statMinAngle[18]; // each bucket is  degrees has a 10 degree range from 0 to 180 degree
 	int statMaxAngle[18]; 
-	float maxAngle = 0;
-	float minAngle = 180;
-	int components;
+	double maxAngle = 0;
+	double minAngle = 180;
+
 	bool orientable = true;
 	bool computedTriangleOrientation = false;
-
-	std::map<std::pair<int, int>, int> hashMap;
+	bool boundry = false;
 
 public:
 	myObjType() { vcount = 0; tcount = 0; };

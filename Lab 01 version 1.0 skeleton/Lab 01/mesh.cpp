@@ -208,6 +208,7 @@ int myObjType::dest(OrTri ot) {
 }
 
 void myObjType::findFNext(){
+	std::map<std::pair<int, int>, int> hashMap;
 	for (int i = 1; i <= tcount; ++i) {
 		for (int j = 0; j < 3; ++j) {
 			int oriTri = makeOrTri(i, j);
@@ -382,6 +383,7 @@ void myObjType::computeStat()
 		cout << statMinAngle[i] << " ";
 	cout << endl;
 	cout << "Components: " << clist.size()<<endl;
+	cout << "Boundry edges: " << boundrylist.size() << endl;
 	OriTriPrint();
 }
 
@@ -389,7 +391,6 @@ void myObjType::orientTriangles(){
 	if (computedTriangleOrientation) {
 		return;
 	}
-	cout << "Orienting triangles..." << endl;
 	if (!orientable) {
 		cout << "Not orientable" << endl;
 		return;
@@ -427,7 +428,6 @@ void myObjType::orientTriangles(){
 		}
 	}
 		computeVertexNormals();
-		cout << "Triangles oriented" << endl;
 		computedTriangleOrientation=true;
 	}
 
