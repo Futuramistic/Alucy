@@ -28,6 +28,8 @@ class myObjType {
 	int fnlist[MAXT][3];     // fnext list for future (not this assignment)
 	double nlist[MAXT][3];   // storing triangle normals
 	double vnlist[MAXV][3];
+	std::vector<std::pair<int,int>> boundrylist;
+	bool boundry = false;
 	std::vector<std::set<int>> clist;
 	double lmax[3];          // the maximum coordinates of x,y,z
 	double lmin[3];          // the minimum coordinates of x,y,z
@@ -38,6 +40,7 @@ class myObjType {
 	float minAngle = 180;
 	int components;
 	bool orientable = true;
+	bool computedTriangleOrientation = false;
 
 	std::map<std::pair<int, int>, int> hashMap;
 
@@ -53,12 +56,15 @@ public:
     void computeStat();
 	void computeTrianglesNormals();
 	void computeVertexNormals();
+	void computeBoundryEdges();
 	void computeAngles();
 	void computeTriangleNormal(int i);
 	int org(OrTri ot);
 	int dest(OrTri ot);
 	void findFNext();
+	void displayBoundries();
 	void computeComponents();
+	void toggleBoundry();
 };
 
 

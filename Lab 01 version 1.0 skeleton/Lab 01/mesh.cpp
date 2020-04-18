@@ -21,6 +21,7 @@
 #include <iomanip>
 #include <set>
 #include <queue>   
+
 using namespace std;
 
 
@@ -45,8 +46,8 @@ void myObjType::draw() {
 		for (int j = 0; j < 3; j++)
 			glVertex3dv(vlist[tlist[i][j]]);
 		glEnd();
-	
-	}
+	}	
+	displayBoundries();
 	glDisable(GL_LIGHTING);
 	glPopMatrix();
 }
@@ -73,9 +74,24 @@ void myObjType::drawGouraud() {
 		glEnd();
 
 	}
+	displayBoundries();
 	glDisable(GL_LIGHTING);
-
 	glPopMatrix();
+}
+
+void myObjType::displayBoundries() {
+	if (boundry){
+		float mat_ambient[] = { 1.0f, 0.0f, 0.0f, 1.0f };
+		float mat_diffuse[] = { 1.0f, 0.0f, 0.0f, 1.0f };
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+		glBegin(GL_LINES);
+		for (int i = 0; i < boundrylist.size(); ++i) {
+				glVertex3dv(vlist[boundrylist.at(i).first]);
+				glVertex3dv(vlist[boundrylist.at(i).second]);
+		}
+		glEnd();
+	}
 }
 
 void myObjType::writeFile(char* filename)
@@ -161,6 +177,8 @@ void myObjType::readFile(char* filename)
 	computeTrianglesNormals();
 	findFNext();
 	computeComponents();
+	computeBoundryEdges();
+	computeVertexNormals();
     cout << "No. of vertices: " << vcount << endl;
     cout << "No. of triangles: " << tcount << endl;
     computeStat();
@@ -368,6 +386,9 @@ void myObjType::computeStat()
 }
 
 void myObjType::orientTriangles(){
+	if (computedTriangleOrientation) {
+		return;
+	}
 	cout << "Orienting triangles..." << endl;
 	if (!orientable) {
 		cout << "Not orientable" << endl;
@@ -378,13 +399,13 @@ void myObjType::orientTriangles(){
 		int start = *component.begin();
 		std::priority_queue<int> queue;
 		queue.push(start);
-		while (!queue.empty()&&orientable){
+		while (!queue.empty() && orientable) {
 			int index = queue.top();
-			queue.pop();		
+			queue.pop();
 			for (int j = 0; j < 3; ++j) {
 				int next = idx(fnlist[index][j]);
-				double dot = nlist[next][0]*nlist[index][0]+nlist[next][1]*nlist[index][1]+nlist[next][2]*nlist[index][2];
-				if (dot < 0.0){
+				double dot = nlist[next][0] * nlist[index][0] + nlist[next][1] * nlist[index][1] + nlist[next][2] * nlist[index][2];
+				if (dot < 0.0) {
 					if (component.find(next) != component.end()) {
 						queue.push(next);
 						int temp = tlist[next][0];
@@ -401,12 +422,17 @@ void myObjType::orientTriangles(){
 			component.erase(index);
 		}
 		if (!orientable) {
-			cout << "Not orientable"<<endl;
+			cout << "Not orientable" << endl;
 			return;
 		}
 	}
-	computeVertexNormals();
-	cout << "Triangles oriented" << endl;
+		computeVertexNormals();
+		cout << "Triangles oriented" << endl;
+		computedTriangleOrientation=true;
+	}
+
+void myObjType::toggleBoundry() {
+	boundry = !boundry;
 }
 
 void myObjType::computeVertexNormals() {
@@ -434,6 +460,18 @@ void myObjType::computeVertexNormals() {
 					vnlist[vertex][0] /= length;
 					vnlist[vertex][1] /= length;
 					vnlist[vertex][2] /= length;
+			}
+		}
+	}
+}
+
+void myObjType::computeBoundryEdges(){
+	boundrylist.clear();
+	for (int i = 1; i <= tcount; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			if (idx(fnlist[i][j]) == i) {
+				int orTri = makeOrTri(i, j);
+				boundrylist.push_back(std::pair<int,int>(org(orTri),dest(orTri)));
 			}
 		}
 	}
