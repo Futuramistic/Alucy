@@ -153,11 +153,17 @@ void keyboard (unsigned char key, int x, int y)
 	case 'G':
 		Gouraud = !Gouraud;
 		if (Gouraud) {
+			myObj.computeVertexNormals();
 			glutDisplayFunc(displayGouraud);
 		}
 		else {
 			glutDisplayFunc(display);
 		}
+		break;
+	case 'r':
+	case 'R':
+		myObj.orientTriangles();
+		break;
 	case '1':
 	case '2':
 	case '3':
@@ -230,6 +236,7 @@ int main(int argc, char **argv)
 	cout << "P: Draw Polygon"<<endl;
 	cout << "V: Draw Vertices"<<endl;
 	cout << "Q: Quit" << endl;
+	cout << "R: Orient normals" << endl;
 	cout << "G: Toggle Gouraud shading" << endl;
 	cout << "O: Write to file" << endl << endl;
 

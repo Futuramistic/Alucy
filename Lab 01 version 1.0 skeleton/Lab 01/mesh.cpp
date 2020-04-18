@@ -52,7 +52,6 @@ void myObjType::draw() {
 }
 
 void myObjType::drawGouraud() {
-	
 	glEnable(GL_LIGHTING);
 
 	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
@@ -161,9 +160,9 @@ void myObjType::readFile(char* filename)
 	// We suggest you to compute the normals here
 	computeTrianglesNormals();
 	findFNext();
+	computeComponents();
     cout << "No. of vertices: " << vcount << endl;
     cout << "No. of triangles: " << tcount << endl;
-	computeVertexNormals();
     computeStat();
 }
 
@@ -235,28 +234,32 @@ void myObjType::findFNext(){
 
 void myObjType::computeTrianglesNormals() {
 	for (int i = 1; i <= tcount; ++i) {
-		double ax = vlist[tlist[i][1]][0] - vlist[tlist[i][0]][0];
-		double ay = vlist[tlist[i][1]][1] - vlist[tlist[i][0]][1];
-		double az = vlist[tlist[i][1]][2] - vlist[tlist[i][0]][2];
-
-		double bx = vlist[tlist[i][2]][0] - vlist[tlist[i][0]][0];
-		double by = vlist[tlist[i][2]][1] - vlist[tlist[i][0]][1];
-		double bz = vlist[tlist[i][2]][2] - vlist[tlist[i][0]][2];
-
-		double nx = (ay * bz) - (az * by);
-		double ny = (az * bx) - (ax * bz);
-		double nz = (ax * by) - (ay * bx);
-
-		double length = sqrt(nx * nx + ny * ny + nz * nz);
-		if (length > 0.0) {
-			nx /= length;
-			ny /= length;
-			nz /= length;
-		}
-		nlist[i][0] = nx;
-		nlist[i][1] = ny;
-		nlist[i][2] = nz;
+		computeTriangleNormal(i);
 	}
+}
+
+void myObjType::computeTriangleNormal(int i) {
+	double ax = vlist[tlist[i][1]][0] - vlist[tlist[i][0]][0];
+	double ay = vlist[tlist[i][1]][1] - vlist[tlist[i][0]][1];
+	double az = vlist[tlist[i][1]][2] - vlist[tlist[i][0]][2];
+
+	double bx = vlist[tlist[i][2]][0] - vlist[tlist[i][0]][0];
+	double by = vlist[tlist[i][2]][1] - vlist[tlist[i][0]][1];
+	double bz = vlist[tlist[i][2]][2] - vlist[tlist[i][0]][2];
+
+	double nx = (ay * bz) - (az * by);
+	double ny = (az * bx) - (ax * bz);
+	double nz = (ax * by) - (ay * bx);
+
+	double length = sqrt(nx * nx + ny * ny + nz * nz);
+	if (length > 0.0) {
+		nx /= length;
+		ny /= length;
+		nz /= length;
+	}
+	nlist[i][0] = nx;
+	nlist[i][1] = ny;
+	nlist[i][2] = nz;
 }
 
 
@@ -313,9 +316,7 @@ void myObjType::computeComponents() {
 	for (int i = 1; i <= tcount; ++i) {
 		triangles.insert(i);
 	}
-	components = 0;
 	while (!triangles.empty()) {
-		++components;
 		std::priority_queue<int> queue;
 		std::set<int> compontentTriangles;
 		int first = *triangles.begin();
@@ -333,6 +334,7 @@ void myObjType::computeComponents() {
 			}
 			triangles.erase(index);
 		}
+		clist.push_back(compontentTriangles);
 	}
 }
 
@@ -350,7 +352,6 @@ void myObjType::computeStat()
 {
 	int i;
 	computeAngles();
-	computeComponents();
     cout << "Min. angle = " << minAngle << endl;
     cout << "Max. angle = " << maxAngle << endl;
 	
@@ -362,8 +363,50 @@ void myObjType::computeStat()
 	for (i = 0; i < 18; i++)
 		cout << statMinAngle[i] << " ";
 	cout << endl;
-	cout << "Components: " << components<<endl;
+	cout << "Components: " << clist.size()<<endl;
 	OriTriPrint();
+}
+
+void myObjType::orientTriangles(){
+	cout << "Orienting triangles..." << endl;
+	if (!orientable) {
+		cout << "Not orientable" << endl;
+		return;
+	}
+	for (int i = 0; i < clist.size(); ++i) {
+		std::set<int> component = clist[i];
+		int start = *component.begin();
+		std::priority_queue<int> queue;
+		queue.push(start);
+		while (!queue.empty()&&orientable){
+			int index = queue.top();
+			queue.pop();		
+			for (int j = 0; j < 3; ++j) {
+				int next = idx(fnlist[index][j]);
+				double dot = nlist[next][0]*nlist[index][0]+nlist[next][1]*nlist[index][1]+nlist[next][2]*nlist[index][2];
+				if (dot < 0.0){
+					if (component.find(next) != component.end()) {
+						queue.push(next);
+						int temp = tlist[next][0];
+						tlist[next][0] = tlist[next][1];
+						tlist[next][1] = temp;
+						computeTriangleNormal(next);
+					}
+					else {
+						orientable = false;
+						break;
+					}
+				}
+			}
+			component.erase(index);
+		}
+		if (!orientable) {
+			cout << "Not orientable"<<endl;
+			return;
+		}
+	}
+	computeVertexNormals();
+	cout << "Triangles oriented" << endl;
 }
 
 void myObjType::computeVertexNormals() {
@@ -373,26 +416,24 @@ void myObjType::computeVertexNormals() {
 			int vertex = org(makeOrTri(i, j));
 			int next = enext(sym(fnlist[triangle][j]));
 			set<int> triangles;
-			if (vnlist[vertex][0] == 0.0 && vnlist[vertex][1] == 0.0 && vnlist[vertex][2] == 0.0) {
-				while (triangles.find(triangle) == triangles.end()) {
+			while (triangles.find(triangle) == triangles.end()) {
 					vnlist[vertex][0] += nlist[triangle][0];
 					vnlist[vertex][1] += nlist[triangle][1];
 					vnlist[vertex][2] += nlist[triangle][2];
 					triangles.insert(triangle);
 					triangle = idx(next);
 					next = enext(sym(fnlist[triangle][j]));
-				}
-				if (triangles.size() > 0) {
+			}
+			if (triangles.size() > 0) {
 					vnlist[vertex][0]/=triangles.size();
 					vnlist[vertex][1]/=triangles.size();
 					vnlist[vertex][2]/=triangles.size();
-				}
-				double length = sqrt(vnlist[vertex][0] * vnlist[vertex][0] + vnlist[vertex][1] * vnlist[vertex][1] + vnlist[vertex][2] * vnlist[vertex][2]);
-				if (length > 0.0) {
+			}
+			double length = sqrt(vnlist[vertex][0] * vnlist[vertex][0] + vnlist[vertex][1] * vnlist[vertex][1] + vnlist[vertex][2] * vnlist[vertex][2]);
+			if (length > 0.0) {
 					vnlist[vertex][0] /= length;
 					vnlist[vertex][1] /= length;
 					vnlist[vertex][2] /= length;
-				}
 			}
 		}
 	}

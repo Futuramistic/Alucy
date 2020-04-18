@@ -4,6 +4,8 @@
 #define MAXV 1000000
 #define MAXT 1000000
 #include <map>
+#include <set>
+#include <vector>
 
 typedef int OrTri;
 typedef int tIdx;
@@ -26,7 +28,7 @@ class myObjType {
 	int fnlist[MAXT][3];     // fnext list for future (not this assignment)
 	double nlist[MAXT][3];   // storing triangle normals
 	double vnlist[MAXV][3];
-	
+	std::vector<std::set<int>> clist;
 	double lmax[3];          // the maximum coordinates of x,y,z
 	double lmin[3];          // the minimum coordinates of x,y,z
 
@@ -35,6 +37,7 @@ class myObjType {
 	float maxAngle = 0;
 	float minAngle = 180;
 	int components;
+	bool orientable = true;
 
 	std::map<std::pair<int, int>, int> hashMap;
 
@@ -42,6 +45,7 @@ public:
 	myObjType() { vcount = 0; tcount = 0; };
 	void readFile(char* filename);  // assumming file contains a manifold
 	void load3DS(char* filename);
+	void orientTriangles();
 	void writeFile(char* filename);  
 	void OriTriPrint();
 	void draw();  
@@ -50,6 +54,7 @@ public:
 	void computeTrianglesNormals();
 	void computeVertexNormals();
 	void computeAngles();
+	void computeTriangleNormal(int i);
 	int org(OrTri ot);
 	int dest(OrTri ot);
 	void findFNext();
