@@ -168,10 +168,8 @@ void myObjType::findFNext(){
 		for (int j = 0; j < 3; ++j) {
 			int oriTri = makeOrTri(i, j);
 			int start = org(oriTri), end = dest(oriTri);
-			std::pair <int, int>key1(start, end);
-			std::pair <int, int>key2(end, start);
+			std::pair <int, int>key1(start, end);	
 			std::map<pair <int, int>, int>::iterator it1 = hashMap.find(key1);
-			std::map<pair <int, int>, int>::iterator it2 = hashMap.find(key2);
 			if (it1 != hashMap.end()) {
 				int found_oriTri = hashMap.at(key1);
 				int id = idx(found_oriTri);
@@ -179,11 +177,21 @@ void myObjType::findFNext(){
 				fnlist[i][j]= found_oriTri;
 				fnlist[id][v%3] = oriTri;
 				hashMap.erase(it1);
-				hashMap.erase(it2);
 			}
 			else{
-				hashMap.emplace(key1, oriTri);
-				hashMap.emplace(key2, sym(oriTri));
+				std::pair <int, int>key2(end, start);
+				std::map<pair <int, int>, int>::iterator it2 = hashMap.find(key2);
+				if (it2 != hashMap.end()) {
+					int found_oriTri = hashMap.at(key2);
+					int id = idx(found_oriTri);
+					int v = ver(found_oriTri);
+					fnlist[i][j] = found_oriTri;
+					fnlist[id][v % 3] = oriTri;
+					hashMap.erase(it2);
+				}
+				else {
+					hashMap.emplace(key1, oriTri);
+				}
 			}
 		}
 	}
@@ -281,20 +289,25 @@ void myObjType::computeComponents() {
 	components = 0;
 	while (!triangles.empty()) {
 		++components;
-		std::priority_queue<int> componentTriangles;
+		std::priority_queue<int> queue;
+		std::set<int> compontentTriangles;
 		int first = *triangles.begin();
-		componentTriangles.push(first);
-		while (!componentTriangles.empty()) {
-			int index = componentTriangles.top();
-			componentTriangles.pop();
-			if (triangles.find(idx(fnlist[index][0])) != triangles.end()) {
-				componentTriangles.push(idx(fnlist[index][0]));
+		queue.push(first);
+		while (!queue.empty()) {
+			int index = queue.top();
+			queue.pop();
+			compontentTriangles.insert(index);
+			if (compontentTriangles.find(idx(fnlist[index][0]))==compontentTriangles.end()&&triangles.find(idx(fnlist[index][0])) != triangles.end()) {
+				queue.push(idx(fnlist[index][0]));
+				compontentTriangles.insert(idx(fnlist[index][0]));
 			}
-			if (triangles.find(idx(fnlist[index][1])) != triangles.end()) {
-				componentTriangles.push(idx(fnlist[index][1]));
+			if (compontentTriangles.find(idx(fnlist[index][1]))==compontentTriangles.end()&&triangles.find(idx(fnlist[index][1])) != triangles.end()) {
+				queue.push(idx(fnlist[index][1]));
+				compontentTriangles.insert(idx(fnlist[index][1]));
 			}
-			if (triangles.find(idx(fnlist[index][2])) != triangles.end()) {
-				componentTriangles.push(idx(fnlist[index][2]));
+			if (compontentTriangles.find(idx(fnlist[index][2]))==compontentTriangles.end()&&triangles.find(idx(fnlist[index][2])) != triangles.end()) {
+				queue.push(idx(fnlist[index][2]));
+				compontentTriangles.insert(idx(fnlist[index][2]));
 			}
 			triangles.erase(index);
 		}
