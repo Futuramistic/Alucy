@@ -26,7 +26,6 @@ using namespace std;
 
 
 void myObjType::draw() {
-
 	glEnable(GL_LIGHTING);
 
 	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
@@ -47,6 +46,33 @@ void myObjType::draw() {
 			glVertex3dv(vlist[tlist[i][j]]);
 		glEnd();
 	
+	}
+	glDisable(GL_LIGHTING);
+	glPopMatrix();
+}
+
+void myObjType::drawGouraud() {
+	
+	glEnable(GL_LIGHTING);
+
+	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+
+	glPushMatrix();
+	double longestSide = 0.0;
+	for (int i = 0; i < 3; i++)
+		if ((lmax[i] - lmin[i]) > longestSide)
+			longestSide = (lmax[i] - lmin[i]);
+	glScalef(4.0 / longestSide, 4.0 / longestSide, 4.0 / longestSide);
+	glTranslated(-(lmin[0] + lmax[0]) / 2.0, -(lmin[1] + lmax[1]) / 2.0, -(lmin[2] + lmax[2]) / 2.0);
+	for (int i = 1; i <= tcount; i++)
+	{
+		glBegin(GL_POLYGON);
+		for (int j = 0; j < 3; j++) {
+			glNormal3dv(vnlist[tlist[i][j]]);
+			glVertex3dv(vlist[tlist[i][j]]);
+		}
+		glEnd();
+
 	}
 	glDisable(GL_LIGHTING);
 
@@ -137,6 +163,7 @@ void myObjType::readFile(char* filename)
 	findFNext();
     cout << "No. of vertices: " << vcount << endl;
     cout << "No. of triangles: " << tcount << endl;
+	computeVertexNormals();
     computeStat();
 }
 
@@ -186,7 +213,7 @@ void myObjType::findFNext(){
 					int id = idx(found_oriTri);
 					int v = ver(found_oriTri);
 					fnlist[i][j] = found_oriTri;
-					fnlist[id][v % 3] = oriTri;
+					fnlist[id][v%3] = oriTri;
 					hashMap.erase(it2);
 				}
 				else {
@@ -337,6 +364,38 @@ void myObjType::computeStat()
 	cout << endl;
 	cout << "Components: " << components<<endl;
 	OriTriPrint();
+}
+
+void myObjType::computeVertexNormals() {
+	for (int i = 1; i <= tcount; ++i) {
+		for (int j = 0; j < 3; ++j){
+			int triangle = i;
+			int vertex = org(makeOrTri(i, j));
+			int next = enext(sym(fnlist[triangle][j]));
+			set<int> triangles;
+			if (vnlist[vertex][0] == 0.0 && vnlist[vertex][1] == 0.0 && vnlist[vertex][2] == 0.0) {
+				while (triangles.find(triangle) == triangles.end()) {
+					vnlist[vertex][0] += nlist[triangle][0];
+					vnlist[vertex][1] += nlist[triangle][1];
+					vnlist[vertex][2] += nlist[triangle][2];
+					triangles.insert(triangle);
+					triangle = idx(next);
+					next = enext(sym(fnlist[triangle][j]));
+				}
+				if (triangles.size() > 0) {
+					vnlist[vertex][0]/=triangles.size();
+					vnlist[vertex][1]/=triangles.size();
+					vnlist[vertex][2]/=triangles.size();
+				}
+				double length = sqrt(vnlist[vertex][0] * vnlist[vertex][0] + vnlist[vertex][1] * vnlist[vertex][1] + vnlist[vertex][2] * vnlist[vertex][2]);
+				if (length > 0.0) {
+					vnlist[vertex][0] /= length;
+					vnlist[vertex][1] /= length;
+					vnlist[vertex][2] /= length;
+				}
+			}
+		}
+	}
 }
 
 

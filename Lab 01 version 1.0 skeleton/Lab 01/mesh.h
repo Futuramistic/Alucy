@@ -25,6 +25,7 @@ class myObjType {
 	int tlist[MAXT][3];      // triangle list
 	int fnlist[MAXT][3];     // fnext list for future (not this assignment)
 	double nlist[MAXT][3];   // storing triangle normals
+	double vnlist[MAXV][3];
 	
 	double lmax[3];          // the maximum coordinates of x,y,z
 	double lmin[3];          // the minimum coordinates of x,y,z
@@ -44,8 +45,10 @@ public:
 	void writeFile(char* filename);  
 	void OriTriPrint();
 	void draw();  
+	void drawGouraud();
     void computeStat();
 	void computeTrianglesNormals();
+	void computeVertexNormals();
 	void computeAngles();
 	int org(OrTri ot);
 	int dest(OrTri ot);
