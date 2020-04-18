@@ -293,19 +293,19 @@ void myObjType::computeComponents() {
 		std::set<int> compontentTriangles;
 		int first = *triangles.begin();
 		queue.push(first);
+		compontentTriangles.insert(first);
 		while (!queue.empty()) {
 			int index = queue.top();
 			queue.pop();
-			compontentTriangles.insert(index);
-			if (compontentTriangles.find(idx(fnlist[index][0]))==compontentTriangles.end()&&triangles.find(idx(fnlist[index][0])) != triangles.end()) {
+			if (compontentTriangles.find(idx(fnlist[index][0]))==compontentTriangles.end()&&triangles.find(idx(fnlist[index][0]))!=triangles.end()) {
 				queue.push(idx(fnlist[index][0]));
 				compontentTriangles.insert(idx(fnlist[index][0]));
 			}
-			if (compontentTriangles.find(idx(fnlist[index][1]))==compontentTriangles.end()&&triangles.find(idx(fnlist[index][1])) != triangles.end()) {
+			if (compontentTriangles.find(idx(fnlist[index][1]))==compontentTriangles.end()&&triangles.find(idx(fnlist[index][1]))!=triangles.end()) {
 				queue.push(idx(fnlist[index][1]));
 				compontentTriangles.insert(idx(fnlist[index][1]));
 			}
-			if (compontentTriangles.find(idx(fnlist[index][2]))==compontentTriangles.end()&&triangles.find(idx(fnlist[index][2])) != triangles.end()) {
+			if (compontentTriangles.find(idx(fnlist[index][2]))==compontentTriangles.end()&&triangles.find(idx(fnlist[index][2]))!=triangles.end()) {
 				queue.push(idx(fnlist[index][2]));
 				compontentTriangles.insert(idx(fnlist[index][2]));
 			}
