@@ -297,17 +297,12 @@ void myObjType::computeComponents() {
 		while (!queue.empty()) {
 			int index = queue.top();
 			queue.pop();
-			if (compontentTriangles.find(idx(fnlist[index][0]))==compontentTriangles.end()&&triangles.find(idx(fnlist[index][0]))!=triangles.end()) {
-				queue.push(idx(fnlist[index][0]));
-				compontentTriangles.insert(idx(fnlist[index][0]));
-			}
-			if (compontentTriangles.find(idx(fnlist[index][1]))==compontentTriangles.end()&&triangles.find(idx(fnlist[index][1]))!=triangles.end()) {
-				queue.push(idx(fnlist[index][1]));
-				compontentTriangles.insert(idx(fnlist[index][1]));
-			}
-			if (compontentTriangles.find(idx(fnlist[index][2]))==compontentTriangles.end()&&triangles.find(idx(fnlist[index][2]))!=triangles.end()) {
-				queue.push(idx(fnlist[index][2]));
-				compontentTriangles.insert(idx(fnlist[index][2]));
+			for (int j = 0; j < 3; ++j) {
+				if (compontentTriangles.find(idx(fnlist[index][j])) == compontentTriangles.end() && 
+					triangles.find(idx(fnlist[index][j])) != triangles.end()){
+					queue.push(idx(fnlist[index][j]));
+					compontentTriangles.insert(idx(fnlist[index][j]));
+				}
 			}
 			triangles.erase(index);
 		}

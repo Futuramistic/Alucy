@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+\Lab 01 version 1.0 skeleton\Debug\*.*
+\Lab 01 version 1.0 skeleton\Lab 01\Debug\*.*
