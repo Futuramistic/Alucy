@@ -28,11 +28,11 @@ class myObjType {
 	int fnlist[MAXT][3];     // fnext list for future (not this assignment)
 	double nlist[MAXT][3];   // storing triangle normals
 	double vnlist[MAXV][3];  // storing vertex normals 
+	std::set<int> neighbours[MAXV]; //storing vertex neighbours
 	std::vector<std::pair<int,int>> boundrylist; //storing boundry edges
 	std::vector<std::set<int>> clist; //storing component lists
 	double lmax[3];          // the maximum coordinates of x,y,z
 	double lmin[3];          // the minimum coordinates of x,y,z
-
 	int statMinAngle[18]; // each bucket is  degrees has a 10 degree range from 0 to 180 degree
 	int statMaxAngle[18]; 
 	double maxAngle = 0;
@@ -62,6 +62,7 @@ public:
 	void findFNext();
 	void displayBoundries();
 	void computeComponents();
+	void getNeighbours();
 	void toggleBoundry();
 };
 

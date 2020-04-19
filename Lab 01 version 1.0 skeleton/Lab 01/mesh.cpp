@@ -174,6 +174,7 @@ void myObjType::readFile(char* filename)
 	}
 
 	// We suggest you to compute the normals here
+	getNeighbours();
 	computeTrianglesNormals();
 	findFNext();
 	computeComponents();
@@ -476,6 +477,20 @@ void myObjType::computeBoundryEdges(){
 		}
 	}
 }
+
+void myObjType::getNeighbours() {
+	for (int i = 1; i <= tcount; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			for (int k = 0; k < 3; ++k) {
+				if (j != k) {
+					neighbours[tlist[i][j]].insert(tlist[i][k]);
+					neighbours[tlist[i][k]].insert(tlist[i][j]);
+				}
+			}
+		}
+	}
+}
+
 
 
 void myObjType::load3DS(char* p_filename) {
