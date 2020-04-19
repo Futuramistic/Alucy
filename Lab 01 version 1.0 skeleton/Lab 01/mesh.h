@@ -28,13 +28,19 @@ class myObjType {
 	int fnlist[MAXT][3];     // fnext list for future (not this assignment)
 	double nlist[MAXT][3];   // storing triangle normals
 	double vnlist[MAXV][3];  // storing vertex normals 
+	
+
 	std::set<int> neighbours[MAXV]; //storing vertex neighbours
-	std::vector<std::pair<int,int>> boundrylist; //storing boundry edges
+	std::vector<std::pair<int, int>> boundrylist; //storing boundry edges
 	std::vector<std::set<int>> clist; //storing component lists
+	std::vector<int> facelist[MAXV]; //
+	int collapseList[MAXV]; //vertex to collapse to
+	double edgeCost[MAXV]; //cost of collapsing vertex
+
 	double lmax[3];          // the maximum coordinates of x,y,z
 	double lmin[3];          // the minimum coordinates of x,y,z
 	int statMinAngle[18]; // each bucket is  degrees has a 10 degree range from 0 to 180 degree
-	int statMaxAngle[18]; 
+	int statMaxAngle[18];
 	double maxAngle = 0;
 	double minAngle = 180;
 
@@ -47,14 +53,17 @@ public:
 	void readFile(char* filename);  // assumming file contains a manifold
 	void load3DS(char* filename);
 	void orientTriangles();
-	void writeFile(char* filename);  
+	void writeFile(char* filename);
 	void OriTriPrint();
-	void draw();  
+	void draw();
 	void drawGouraud();
-    void computeStat();
+	void computeStat();
 	void computeTrianglesNormals();
 	void computeVertexNormals();
 	void computeBoundryEdges();
+	void deleteVertex(int vertex);
+	void deleteTriangle(int triangle);
+	bool hasVertex(int vertex, int triangle);
 	void computeAngles();
 	void computeTriangleNormal(int i);
 	int org(OrTri ot);
@@ -64,6 +73,12 @@ public:
 	void computeComponents();
 	void getNeighbours();
 	void toggleBoundry();
+	void simplifyMesh(int faceCount);
+	void computeEdgeCost(int vertex);
+	double computeEdgeCollapseCost(int vertex, int neighbour);
+	void collapse(int vertex, int neighbour);
+	void printNeighbours();
+	void replace(int triangle,int vertex, int neighbour);
 };
 
 

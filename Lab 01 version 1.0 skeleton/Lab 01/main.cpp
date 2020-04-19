@@ -178,7 +178,10 @@ void keyboard (unsigned char key, int x, int y)
 	case 'q':
 		exit(0);
 	break;
-
+	case 'T':
+	case 't':
+		myObj.simplifyMesh(5500);
+		break;
 	default:
 	break;
 	}
