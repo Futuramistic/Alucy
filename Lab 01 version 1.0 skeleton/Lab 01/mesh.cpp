@@ -175,15 +175,18 @@ void myObjType::readFile(char* filename)
 	}
 
 	// We suggest you to compute the normals here
-	
+	computeInfo();
+}
+
+void myObjType::computeInfo(){
 	computeTrianglesNormals();
 	findFNext();
 	computeComponents();
 	computeBoundryEdges();
 	computeVertexNormals();
-    cout << "No. of vertices: " << vcount << endl;
-    cout << "No. of triangles: " << tcount << endl;
-    computeStat();
+	cout << "No. of vertices: " << vcount << endl;
+	cout << "No. of triangles: " << tcount << endl;
+	computeStat();
 }
 
 int myObjType::org(OrTri ot) {
@@ -393,9 +396,6 @@ void myObjType::computeStat()
 }
 
 void myObjType::orientTriangles(){
-	if (computedTriangleOrientation) {
-		return;
-	}
 	if (!orientable) {
 		cout << "Not orientable" << endl;
 		return;
@@ -433,7 +433,6 @@ void myObjType::orientTriangles(){
 		}
 	}
 		computeVertexNormals();
-		computedTriangleOrientation=true;
 	}
 
 void myObjType::toggleBoundry() {
@@ -510,7 +509,6 @@ void myObjType::simplifyMesh(int faceCount) {
 		for (int i = 1; i <= vcount; ++i) {
 			computeEdgeCost(i);
 		}
-		cout << "Face count: " << tcount << endl;
 		int vertex = 1;
 		for (int i = 1; i <= vcount; ++i) {
 			if (edgeCost[i] < edgeCost[vertex]) {
@@ -519,12 +517,7 @@ void myObjType::simplifyMesh(int faceCount) {
 		}
 		collapse(vertex, collapseList[vertex]);
 	}
-	PrintInfo();
-	computeTrianglesNormals();
-	findFNext();
-	computeComponents();
-	computeBoundryEdges();
-	computeVertexNormals();
+	computeInfo();
 }
 
 void myObjType::deleteVertex(int vertex){
@@ -565,6 +558,10 @@ void myObjType::deleteTriangle(int triangle) {
 }
 
 void myObjType::collapse(int vertex, int neighbour) {
+	if (neighbour == -1) {
+		deleteVertex(vertex);
+		return;
+	}
 	std::vector<int> deletedFaces;
 	for (set<int>::iterator it = facelist[vertex].begin(); it!= facelist[vertex].end(); ++it) {
 		int triangle = *it;
@@ -581,15 +578,6 @@ void myObjType::collapse(int vertex, int neighbour) {
 		}
 	}
 	deleteVertex(vertex);
-	deleteInvalidTriangles();
-}
-
-void myObjType::deleteInvalidTriangles(){
-	for (int i = 1; i <= tcount; ++i) {
-		if (tlist[i][0] == tlist[i][1] || tlist[i][0] == tlist[i][2] || tlist[i][2] == tlist[i][1]) {
-			deleteTriangle(i);
-		}
-	}
 }
 
 void myObjType::replace(int triangle,int vertex, int neighbour) {

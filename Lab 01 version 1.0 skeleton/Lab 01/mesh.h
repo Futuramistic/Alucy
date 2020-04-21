@@ -61,9 +61,9 @@ public:
 	void writeFile(char* filename);
 	void PrintInfo();
 	void draw();
-	void deleteInvalidTriangles();
 	void drawGouraud();
 	void computeStat();
+	void computeInfo();
 	void computeTrianglesNormals();
 	void computeVertexNormals();
 	void computeBoundryEdges();

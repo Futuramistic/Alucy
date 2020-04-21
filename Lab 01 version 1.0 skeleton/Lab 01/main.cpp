@@ -180,7 +180,10 @@ void keyboard (unsigned char key, int x, int y)
 	break;
 	case 'T':
 	case 't':
-		myObj.simplifyMesh(myObj.tcount*0.9);
+		cout << "Enter the percentage you want to simplify to:";
+		double percentage;
+		cin >> percentage;
+		myObj.simplifyMesh(percentage*myObj.tcount);
 		break;
 	default:
 	break;
@@ -245,6 +248,7 @@ int main(int argc, char **argv)
 	cout << "R: Orient normals" << endl;
 	cout << "G: Toggle Gouraud shading" << endl;
 	cout << "B: Toggle Components Boundries" << endl;
+	cout << "T: Simplify Mesh" << endl;
 	cout << "O: Write to file" << endl << endl;
 
 	cout << "Left mouse click and drag: rotate the object"<<endl;
