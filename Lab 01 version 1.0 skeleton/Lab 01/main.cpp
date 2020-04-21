@@ -180,7 +180,7 @@ void keyboard (unsigned char key, int x, int y)
 	break;
 	case 'T':
 	case 't':
-		myObj.loopSubdivide();
+		myObj.simplifyMesh(myObj.tcount*0.9);
 		break;
 	default:
 	break;

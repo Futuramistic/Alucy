@@ -61,6 +61,7 @@ public:
 	void writeFile(char* filename);
 	void PrintInfo();
 	void draw();
+	void deleteInvalidTriangles();
 	void drawGouraud();
 	void computeStat();
 	void computeTrianglesNormals();

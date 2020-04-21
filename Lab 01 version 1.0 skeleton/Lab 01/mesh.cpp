@@ -486,14 +486,14 @@ void myObjType::computeBoundryEdges(){
 }
 
 void myObjType::getNeighbours() {
-	for (int i = 0; i <= vcount; ++i) {
+	for (int i = 1; i <= vcount; ++i) {
 		neighbours[i].clear();
 		facelist[i].clear();
 	}
 	for (int i = 1; i <= tcount; ++i) {
 		for (int j = 0; j < 3; ++j) {
 			for (int k = 0; k < 3; ++k) {
-				if (tlist[i][j]!=tlist[i][k]&&k!=j) {
+				if (tlist[i][j]!=tlist[i][k]){
 					neighbours[tlist[i][j]].insert(tlist[i][k]);
 				}
 			}
@@ -504,14 +504,13 @@ void myObjType::getNeighbours() {
 
 
 void myObjType::simplifyMesh(int faceCount) {
-	std::cout << "Orginal face count: " << tcount << endl;
 	while (tcount > faceCount) {
 		getNeighbours();
 		computeTrianglesNormals();
 		for (int i = 1; i <= vcount; ++i) {
 			computeEdgeCost(i);
 		}
-		cout << "Face count: " << tcount<<endl;
+		cout << "Face count: " << tcount << endl;
 		int vertex = 1;
 		for (int i = 1; i <= vcount; ++i) {
 			if (edgeCost[i] < edgeCost[vertex]) {
@@ -529,21 +528,23 @@ void myObjType::simplifyMesh(int faceCount) {
 }
 
 void myObjType::deleteVertex(int vertex){
-	//Move all indexes by one if bigger than vertex
-	for (int i = 1; i <= tcount; ++i) {
-		for (int j = 0; j < 3; ++j) {
-			if (tlist[i][j] > vertex) {
-				--tlist[i][j];
+	if (vertex > 0) {
+		//Move all indexes by one if bigger than vertex
+		for (int i = 1;i<=tcount;++i){
+			for(int j = 0;j<3;++j){
+				if (tlist[i][j]>vertex){
+					--tlist[i][j];
+				}
 			}
 		}
-	}
-	//Move all vertices
-	for (int i = vertex; i < vcount; ++i) {
-		for (int j = 0; j < 3; ++j) {
-			vlist[i][j] = vlist[i + 1][j];
+		//Move all vertices
+		for(int i=vertex;i<vcount;i++){
+			for (int j = 0; j < 3; ++j){
+				vlist[i][j] = vlist[i + 1][j];
+			}
 		}
+		--vcount;
 	}
-	--vcount;
 	return;
 }
 
@@ -553,59 +554,52 @@ bool myObjType::hasVertex(int vertex, int triangle) {
 
 void myObjType::deleteTriangle(int triangle) {
 	//Move all the triangles
-	for (int i = triangle; i<tcount; ++i) {
-		for (int j = 0; j < 3; ++j) {
-			tlist[i][j] = tlist[i + 1][j];
+	if (triangle > 0) {
+		for (int i = triangle; i <= tcount - 1; ++i) {
+			for (int j = 0; j < 3; ++j) {
+				tlist[i][j] = tlist[i + 1][j];
+			}
 		}
+		--tcount;
 	}
-	--tcount;
 }
 
 void myObjType::collapse(int vertex, int neighbour) {
-	cout << "Collapsable:" << vertex << " & " << neighbour << endl;
-	if (neighbour == -1){
-		deleteVertex(vertex);
-		return;
-	}
 	std::vector<int> deletedFaces;
-	std::vector<int> vertices;
 	for (set<int>::iterator it = facelist[vertex].begin(); it!= facelist[vertex].end(); ++it) {
 		int triangle = *it;
-		if (!hasVertex(neighbour, triangle))
-		{
-			replace(triangle, vertex, neighbour);
-		}
-		else {
-			deletedFaces.push_back(triangle);
-		}
+		if (hasVertex(neighbour, triangle)) {deletedFaces.push_back(triangle);}
+		else{replace(triangle,vertex,neighbour);}
 	}
-
-	for (int i = 0; i < deletedFaces.size(); ++i) {
+	for (int i = 0; i<deletedFaces.size(); ++i) {
 		int triangle = deletedFaces.at(i);
 		deleteTriangle(triangle);
+		for (int j = i+1; j < deletedFaces.size(); ++j) {
+			if (triangle < deletedFaces.at(j)){
+				--deletedFaces[j];
+			}
+		}
 	}
-	cout << "TO DELETE: " << deletedFaces.size() << endl;
-	deletedFaces.clear();
 	deleteVertex(vertex);
+	deleteInvalidTriangles();
+}
+
+void myObjType::deleteInvalidTriangles(){
 	for (int i = 1; i <= tcount; ++i) {
-		if (tlist[i][0] == tlist[i][1] || tlist[i][0] == tlist[i][2] || tlist[i][1] == tlist[i][2] || hasVertex(0,i)) {
-			deletedFaces.push_back(i);
+		if (tlist[i][0] == tlist[i][1] || tlist[i][0] == tlist[i][2] || tlist[i][2] == tlist[i][1]) {
+			deleteTriangle(i);
 		}
-	}
-	for (int i = 0; i < deletedFaces.size(); ++i) {
-		int triangle = deletedFaces.at(i);
-		deleteTriangle(triangle);
 	}
 }
 
-void myObjType::replace(int triangle,int oldVertex, int neighbour) {
-	if(tlist[triangle][0]==oldVertex){
+void myObjType::replace(int triangle,int vertex, int neighbour) {
+	if(tlist[triangle][0]==vertex){
 		tlist[triangle][0] = neighbour;
 	}
-	else if (tlist[triangle][1] == oldVertex) {
+	else if (tlist[triangle][1]==vertex){
 		tlist[triangle][1] = neighbour;
 	}
-	else if (tlist[triangle][2] == oldVertex) {
+	else{
 		tlist[triangle][2] = neighbour;
 	}
 }
@@ -613,7 +607,7 @@ void myObjType::replace(int triangle,int oldVertex, int neighbour) {
 void myObjType::computeEdgeCost(int vertex) {
 	if (neighbours[vertex].size() == 0) {
 		collapseList[vertex] = -1;
-		edgeCost[vertex] = -1;
+		edgeCost[vertex] = -0.1;
 		return;
 	}
 	collapseList[vertex] = -1;
@@ -628,30 +622,25 @@ void myObjType::computeEdgeCost(int vertex) {
 }
 
 double myObjType::computeEdgeCollapseCost(int vertex, int neighbour) {
-	double edgeLength = sqrt(vlist[vertex][0] * vlist[neighbour][0] + vlist[vertex][1] * vlist[neighbour][1] + vlist[vertex][2] * vlist[neighbour][2]);
+	double edgeLength = sqrt((vlist[vertex][0]-vlist[neighbour][0])*(vlist[vertex][0]-vlist[neighbour][0]) + 
+							 (vlist[vertex][1]-vlist[neighbour][1])*(vlist[vertex][1]-vlist[neighbour][1]) + 
+							 (vlist[vertex][2]-vlist[neighbour][2])*(vlist[vertex][2]-vlist[neighbour][2]));
 	double curvature = 0.0;
 
 	std::vector<int> sides;
 	for (set<int>::iterator it = facelist[vertex].begin(); it != facelist[vertex].end(); ++it) {
 		int triangle = *it;
-		if (hasVertex(neighbour,triangle))
-		{
-			sides.push_back(triangle);
-		}
+		if (hasVertex(neighbour,triangle)){ sides.push_back(triangle); }
 	}
 
-	for (int i = 0; i < facelist[vertex].size(); ++i) {
+	for (set<int>::iterator it = facelist[vertex].begin(); it != facelist[vertex].end(); ++it) {
 		double minCurv = 1.0;
 		for (int j = 0; j < sides.size(); j++) {
 			int triangle = sides.at(j);
-			float dotProd = (vlist[vertex][0] * nlist[triangle][0]) + (vlist[vertex][1] * nlist[triangle][1]) + (vlist[vertex][2] * nlist[triangle][2]);
-			if (minCurv > (1 - dotProd) / 2.0f) {
-				minCurv = (1 - dotProd) / 2.0f;
-			}
+			double dotProd = (nlist[*it][0]*nlist[triangle][0])+(nlist[*it][1]*nlist[triangle][1]) + (nlist[*it][2] * nlist[triangle][2]);
+			if (minCurv > (1 - dotProd) / 2.0){ minCurv = (1 - dotProd) / 2.0;}
 		}
-		if (curvature < minCurv) {
-			curvature = minCurv;
-		}
+		if (curvature<minCurv){curvature = minCurv;}
 	}
 	return edgeLength*curvature;
 }
