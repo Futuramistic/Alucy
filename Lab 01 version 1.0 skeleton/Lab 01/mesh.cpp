@@ -793,43 +793,43 @@ void myObjType::mergeTriangles(int i, int odd[3]){
 		tlooplist[i][2] = odd3;
 	}
 	++tcount;
-	tlooplist[tcount][0] = even2;
-	tlooplist[tcount][1] = odd2;
-	tlooplist[tcount][2] = odd1;
+	tlooplist[tcount][0] = odd2;
+	tlooplist[tcount][1] = odd1;
+	tlooplist[tcount][2] = even2;
 	normal = computeTriangleNormal(vlooplist[even2], vlooplist[odd2], vlooplist[odd1]);
 	nx = normal.at(0);
 	ny = normal.at(1);
 	nz = normal.at(2);
 	if (nx * nlist[i][0] + ny * nlist[i][1] + nz * nlist[i][2] < 0) {
-		tlooplist[tcount][0] = odd2;
-		tlooplist[tcount][1] = even2;
-		tlooplist[tcount][2] = odd1;
+		tlooplist[tcount][0] = odd1;
+		tlooplist[tcount][1] = odd2;
+		tlooplist[tcount][2] = even2;
 	}
 	++tcount;
-	tlooplist[tcount][0] = even1;
-	tlooplist[tcount][1] = odd1;
-	tlooplist[tcount][2] = odd3;
+	tlooplist[tcount][0] = odd1;
+	tlooplist[tcount][1] = odd3;
+	tlooplist[tcount][2] = even1;
 	normal = computeTriangleNormal(vlooplist[even1], vlooplist[odd1], vlooplist[odd3]);
 	nx = normal.at(0);
 	ny = normal.at(1);
 	nz = normal.at(2);
 	if (nx * nlist[i][0] + ny * nlist[i][1] + nz * nlist[i][2] < 0) {
-		tlooplist[tcount][0] = odd1;
-		tlooplist[tcount][1] = even1;
-		tlooplist[tcount][2] = odd3;
+		tlooplist[tcount][0] = odd3;
+		tlooplist[tcount][1] = odd1;
+		tlooplist[tcount][2] = even1;
 	}
 	++tcount;
-	tlooplist[tcount][0] = even3;
-	tlooplist[tcount][1] = odd3;
-	tlooplist[tcount][2] = odd2;
-	normal = computeTriangleNormal(vlooplist[even3], vlooplist[odd3], vlooplist[odd2]);
+	tlooplist[tcount][0] = odd3;
+	tlooplist[tcount][1] = odd2;
+	tlooplist[tcount][2] = even3;
+	normal = computeTriangleNormal(vlooplist[odd3], vlooplist[odd2], vlooplist[even3]);
 	nx = normal.at(0);
 	ny = normal.at(1);
 	nz = normal.at(2);
 	if (nx * nlist[i][0] + ny * nlist[i][1] + nz * nlist[i][2] < 0) {
-		tlooplist[tcount][0] = odd3;
-		tlooplist[tcount][1] = even3;
-		tlooplist[tcount][2] = odd2;
+		tlooplist[tcount][0] = odd2;
+		tlooplist[tcount][1] = odd3;
+		tlooplist[tcount][2] = even3;
 	}
 }
 
