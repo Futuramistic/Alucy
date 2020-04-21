@@ -21,19 +21,23 @@ inline OrTri sym(OrTri ot) { int v = ver(ot); return v < 3 ? ot + 3 : ot - 3; };
 
 class myObjType {
 	int vcount = 0;
-	int tcount = 0;
 
-	double vlist[MAXV][3];   // vertices list
+	double vlist[MAXV][3]; // vertices list
+	double vlooplist[MAXV][3];
 	int tlist[MAXT][3];      // triangle list
+	int tlooplist[MAXT][3];
 	int fnlist[MAXT][3];     // fnext list for future (not this assignment)
 	double nlist[MAXT][3];   // storing triangle normals
 	double vnlist[MAXV][3];  // storing vertex normals 
 	
 
-	std::set<int> neighbours[MAXV]; //storing vertex neighbours
+	
 	std::vector<std::pair<int, int>> boundrylist; //storing boundry edges
 	std::vector<std::set<int>> clist; //storing component lists
-	std::vector<int> facelist[MAXV]; //
+
+	std::set<int> neighbours[MAXV]; //storing vertex neighbours
+	std::set<int> facelist[MAXV]; //storing facelist for each vertex
+	std::set<int> boundryVertices;
 	int collapseList[MAXV]; //vertex to collapse to
 	double edgeCost[MAXV]; //cost of collapsing vertex
 
@@ -50,17 +54,21 @@ class myObjType {
 
 public:
 	myObjType() { vcount = 0; tcount = 0; };
+	int tcount=0;
 	void readFile(char* filename);  // assumming file contains a manifold
 	void load3DS(char* filename);
 	void orientTriangles();
 	void writeFile(char* filename);
-	void OriTriPrint();
+	void PrintInfo();
 	void draw();
 	void drawGouraud();
 	void computeStat();
 	void computeTrianglesNormals();
 	void computeVertexNormals();
 	void computeBoundryEdges();
+	void computeOdd(int triangle);
+	void computeEven(int triangle);
+	void loopSubdivide();
 	void deleteVertex(int vertex);
 	void deleteTriangle(int triangle);
 	bool hasVertex(int vertex, int triangle);

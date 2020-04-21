@@ -43,8 +43,9 @@ void myObjType::draw() {
 		glBegin(GL_POLYGON);
 // uncomment the following after you computed the normals
 		glNormal3dv(nlist[i]);
-		for (int j = 0; j < 3; j++)
+		for (int j = 0; j < 3; j++) {
 			glVertex3dv(vlist[tlist[i][j]]);
+		}
 		glEnd();
 	}	
 	displayBoundries();
@@ -180,7 +181,6 @@ void myObjType::readFile(char* filename)
 	computeComponents();
 	computeBoundryEdges();
 	computeVertexNormals();
-	getNeighbours();
     cout << "No. of vertices: " << vcount << endl;
     cout << "No. of triangles: " << tcount << endl;
     computeStat();
@@ -359,12 +359,16 @@ void myObjType::computeComponents() {
 	}
 }
 
-void myObjType::OriTriPrint() {
+void myObjType::PrintInfo() {
 	std::ofstream outfile;
 	outfile.open("log.txt", std::ios::out);
 	std::string strbuff;
 	for (int i = 1; i <= tcount; ++i) {
-		outfile << "Triangle "<<i<<":  OriTri:"<<makeOrTri(i,0)<<" List:"<< fnlist[i][0] << " " << fnlist[i][1] << " " << fnlist[i][2] << std::endl;
+		outfile << "Triangle: " << i<<": "<<endl;
+		for (int j = 0; j < 3; ++j) {
+			 outfile<<"Vertex: "<< tlist[i][j] << endl;
+		}
+		outfile << endl;
 	}
 	outfile.close();
 }
@@ -386,7 +390,6 @@ void myObjType::computeStat()
 	cout << endl;
 	cout << "Components: " << clist.size()<<endl;
 	cout << "Boundry edges: " << boundrylist.size() << endl;
-	OriTriPrint();
 }
 
 void myObjType::orientTriangles(){
@@ -469,30 +472,32 @@ void myObjType::computeVertexNormals() {
 
 void myObjType::computeBoundryEdges(){
 	boundrylist.clear();
+	boundryVertices.clear();
 	for (int i = 1; i <= tcount; ++i) {
 		for (int j = 0; j < 3; ++j) {
 			if (idx(fnlist[i][j]) == i) {
 				int orTri = makeOrTri(i, j);
 				boundrylist.push_back(std::pair<int,int>(org(orTri),dest(orTri)));
+				boundryVertices.insert(org(orTri));
+				boundryVertices.insert(dest(orTri));
 			}
 		}
 	}
 }
 
 void myObjType::getNeighbours() {
-	for (int i = 1; i <= vcount; ++i) {
+	for (int i = 0; i <= vcount; ++i) {
 		neighbours[i].clear();
 		facelist[i].clear();
 	}
 	for (int i = 1; i <= tcount; ++i) {
 		for (int j = 0; j < 3; ++j) {
 			for (int k = 0; k < 3; ++k) {
-				if (j != k) {
+				if (tlist[i][j]!=tlist[i][k]&&k!=j) {
 					neighbours[tlist[i][j]].insert(tlist[i][k]);
-					neighbours[tlist[i][k]].insert(tlist[i][j]);
 				}
 			}
-			facelist[tlist[i][j]].push_back(i);
+			facelist[tlist[i][j]].insert(i);
 		}
 	}
 }
@@ -500,11 +505,12 @@ void myObjType::getNeighbours() {
 
 void myObjType::simplifyMesh(int faceCount) {
 	std::cout << "Orginal face count: " << tcount << endl;
-	for (int i = 1; i <= vcount; ++i) {
-		computeEdgeCost(i);
-	}
-
-	while (tcount >= faceCount) {
+	while (tcount > faceCount) {
+		getNeighbours();
+		computeTrianglesNormals();
+		for (int i = 1; i <= vcount; ++i) {
+			computeEdgeCost(i);
+		}
 		cout << "Face count: " << tcount<<endl;
 		int vertex = 1;
 		for (int i = 1; i <= vcount; ++i) {
@@ -513,19 +519,17 @@ void myObjType::simplifyMesh(int faceCount) {
 			}
 		}
 		collapse(vertex, collapseList[vertex]);
-		for (int i = 1; i <= vcount; ++i) {
-			computeEdgeCost(i);
-		}
 	}
+	PrintInfo();
 	computeTrianglesNormals();
 	findFNext();
 	computeComponents();
 	computeBoundryEdges();
 	computeVertexNormals();
-	getNeighbours();
 }
 
-void myObjType::deleteVertex(int vertex) {
+void myObjType::deleteVertex(int vertex){
+	//Move all indexes by one if bigger than vertex
 	for (int i = 1; i <= tcount; ++i) {
 		for (int j = 0; j < 3; ++j) {
 			if (tlist[i][j] > vertex) {
@@ -533,6 +537,7 @@ void myObjType::deleteVertex(int vertex) {
 			}
 		}
 	}
+	//Move all vertices
 	for (int i = vertex; i < vcount; ++i) {
 		for (int j = 0; j < 3; ++j) {
 			vlist[i][j] = vlist[i + 1][j];
@@ -547,7 +552,8 @@ bool myObjType::hasVertex(int vertex, int triangle) {
 }
 
 void myObjType::deleteTriangle(int triangle) {
-	for (int i = triangle; i <tcount; ++i) {
+	//Move all the triangles
+	for (int i = triangle; i<tcount; ++i) {
 		for (int j = 0; j < 3; ++j) {
 			tlist[i][j] = tlist[i + 1][j];
 		}
@@ -556,36 +562,40 @@ void myObjType::deleteTriangle(int triangle) {
 }
 
 void myObjType::collapse(int vertex, int neighbour) {
-	if (neighbour == -1) {
+	cout << "Collapsable:" << vertex << " & " << neighbour << endl;
+	if (neighbour == -1){
 		deleteVertex(vertex);
 		return;
 	}
 	std::vector<int> deletedFaces;
 	std::vector<int> vertices;
-	for (int i = 0; i < facelist[vertex].size(); ++i) {
-		int triangle = facelist[vertex].at(i);
-		if(hasVertex(neighbour,triangle))
+	for (set<int>::iterator it = facelist[vertex].begin(); it!= facelist[vertex].end(); ++it) {
+		int triangle = *it;
+		if (!hasVertex(neighbour, triangle))
 		{
+			replace(triangle, vertex, neighbour);
+		}
+		else {
 			deletedFaces.push_back(triangle);
-			facelist[vertex][i] = -1;
+		}
+	}
+
+	for (int i = 0; i < deletedFaces.size(); ++i) {
+		int triangle = deletedFaces.at(i);
+		deleteTriangle(triangle);
+	}
+	cout << "TO DELETE: " << deletedFaces.size() << endl;
+	deletedFaces.clear();
+	deleteVertex(vertex);
+	for (int i = 1; i <= tcount; ++i) {
+		if (tlist[i][0] == tlist[i][1] || tlist[i][0] == tlist[i][2] || tlist[i][1] == tlist[i][2] || hasVertex(0,i)) {
+			deletedFaces.push_back(i);
 		}
 	}
 	for (int i = 0; i < deletedFaces.size(); ++i) {
 		int triangle = deletedFaces.at(i);
-		for (int j = 0; j < 3; ++j) {
-			if (tlist[triangle][j] != neighbour && tlist[triangle][j] != vertex) {
-				vertices.push_back(tlist[triangle][j]);
-			}
-		}
 		deleteTriangle(triangle);
 	}
-	for (int i = 0; i<facelist[vertex].size(); ++i) {
-		int triangle = facelist[vertex].at(i);
-		if (facelist[vertex].at(i) != -1) {
-			replace(triangle, vertex, neighbour);
-		}
-	}
-	deleteVertex(vertex);
 }
 
 void myObjType::replace(int triangle,int oldVertex, int neighbour) {
@@ -622,26 +632,143 @@ double myObjType::computeEdgeCollapseCost(int vertex, int neighbour) {
 	double curvature = 0.0;
 
 	std::vector<int> sides;
-	for (int i = 0; i < facelist[vertex].size(); ++i) {
-		if (tlist[facelist[vertex].at(i)][0] == neighbour || tlist[facelist[vertex].at(i)][1] == neighbour || tlist[facelist[vertex].at(i)][2] == neighbour)
+	for (set<int>::iterator it = facelist[vertex].begin(); it != facelist[vertex].end(); ++it) {
+		int triangle = *it;
+		if (hasVertex(neighbour,triangle))
 		{
-			sides.push_back(facelist[vertex].at(i));
+			sides.push_back(triangle);
 		}
 	}
 
 	for (int i = 0; i < facelist[vertex].size(); ++i) {
 		double minCurv = 1.0;
 		for (int j = 0; j < sides.size(); j++) {
-			float dotProd = (vlist[vertex][0] * nlist[sides.at(j)][0]) + (vlist[vertex][1] * nlist[sides.at(j)][1]) + (vlist[vertex][2] * nlist[sides.at(j)][2]);
+			int triangle = sides.at(j);
+			float dotProd = (vlist[vertex][0] * nlist[triangle][0]) + (vlist[vertex][1] * nlist[triangle][1]) + (vlist[vertex][2] * nlist[triangle][2]);
 			if (minCurv > (1 - dotProd) / 2.0f) {
 				minCurv = (1 - dotProd) / 2.0f;
-			}		
+			}
 		}
 		if (curvature < minCurv) {
 			curvature = minCurv;
 		}
 	}
-	return edgeLength * curvature;
+	return edgeLength*curvature;
+}
+
+void myObjType::computeEven(int triangle) {
+	for (int j = 0; j < 3; ++j) {
+		bool crease = false;
+		//check if boundary vertex
+		if (!crease) {
+			int k = neighbours[tlist[triangle][j]].size();
+			double beta = 1 / k * (5 / 8 - std::pow(2, (3 / 8 + 1 / 4 * cos(2 * M_PI / k))));
+			double x = 0;
+			double y = 0;
+			double z = 0;
+			for (set<int>::iterator it = neighbours[tlist[triangle][j]].begin(); it != neighbours[tlist[triangle][j]].end(); ++it) {
+				x += vlist[*it][0];
+				y += vlist[*it][1];
+				z += vlist[*it][2];
+			}
+			double vx = vlist[tlist[triangle][j]][0];
+			double vy = vlist[tlist[triangle][j]][1];
+			double vz = vlist[tlist[triangle][j]][2];
+			vlooplist[tlist[triangle][j]][0] = vx * (1.0 - (k * beta)) + x * beta;
+			vlooplist[tlist[triangle][j]][1] = vy * (1.0 - (k * beta)) + y * beta;
+			vlooplist[tlist[triangle][j]][2] = vz * (1.0 - (k * beta)) + z * beta;
+		}
+		else {
+			double vx = vlist[tlist[triangle][j]][0];
+			double vy = vlist[tlist[triangle][j]][1];
+			double vz = vlist[tlist[triangle][j]][2];
+			vlooplist[tlist[triangle][j]][0] = 0.75 * vx;
+			vlooplist[tlist[triangle][j]][1] = 0.75 * vy;
+			vlooplist[tlist[triangle][j]][2] = 0.75 * vz;
+		}
+	}
+}
+
+void myObjType::computeOdd(int triangle) {
+	for (int j = 0; j < 3; ++j) {
+		if (idx(fnlist[triangle][j]) == triangle) {
+			++vcount;
+			int a = org(fnlist[triangle][j]);
+			int b = dest(fnlist[triangle][j]);
+			vlooplist[vcount][0] = 1.0 / 2.0 * (vlist[a][0] + vlist[b][0]);
+			vlooplist[vcount][1] = 1.0 / 2.0 * (vlist[a][1] + vlist[b][1]);
+			vlooplist[vcount][2] = 1.0 / 2.0 * (vlist[a][2] + vlist[b][2]);
+		}
+		else {
+			int a = org(fnlist[triangle][j]);
+			int b = dest(fnlist[triangle][j]);
+			int c, d;
+			for (int i = 0; i < 3; ++i) {
+				if (tlist[idx(fnlist[triangle][j])][i] != a && tlist[idx(fnlist[triangle][j])][i] != b) {
+					c = tlist[idx(fnlist[triangle][j])][i];
+				}
+			}
+			for (int i = 0; i < 3; ++i) {
+				if (tlist[triangle][i] != a && tlist[triangle][i] != b) {
+					d = tlist[triangle][i];
+				}
+			}
+			++vcount;
+			vlooplist[vcount][0] = (3.0 / 8.0) * (vlist[a][0] + vlist[b][0])+ (1.0/8.0) * (vlist[c][0] + vlist[d][0]);
+			vlooplist[vcount][1] = (3.0 / 8.0) * (vlist[a][1] + vlist[b][1]) + (1.0 / 8.0) * (vlist[c][1] + vlist[d][1]);
+			vlooplist[vcount][2] = (3.0 /8.0) *  (vlist[a][2] + vlist[b][2]) + (1.0 /8.0) * (vlist[c][2] + vlist[d][2]);
+		}
+	}
+}
+
+void myObjType::loopSubdivide(){
+	getNeighbours();
+	int triangles = tcount;
+	for (int i = 1; i <= triangles; ++i) {
+		computeOdd(i);
+		computeEven(i);
+		int odd1 = vcount - 2;
+		int odd2 = vcount - 1;
+		int odd3 = vcount;
+		int even1 = tlist[i][0];
+		int even2 = tlist[i][1];
+		int even3 = tlist[i][2];
+		tlooplist[i][0] = odd1;
+		tlooplist[i][1] = odd2; 
+		tlooplist[i][2] = odd3;
+		++tcount;
+		tlooplist[tcount][0] = even2;
+		tlooplist[tcount][1] = odd2;
+		tlooplist[tcount][2] = odd1;
+		++tcount;
+		tlooplist[tcount][0] = even1;
+		tlooplist[tcount][1] = odd1;
+		tlooplist[tcount][2] = odd3;
+		++tcount;
+		tlooplist[tcount][0] = even3;
+		tlooplist[tcount][1] = odd3;
+		tlooplist[tcount][2] = odd2;
+	}
+	for (int i = 1; i <= vcount; ++i) {
+		vlist[i][0] = vlooplist[i][0];
+		vlooplist[i][0] = 0;
+		vlist[i][1] = vlooplist[i][1];
+		vlooplist[i][1] = 0;
+		vlist[i][2] = vlooplist[i][2];
+		vlooplist[i][2] = 0;
+	}
+	for (int i = 1; i <= tcount; ++i) {
+		tlist[i][0] = tlooplist[i][0];
+		tlooplist[i][0] = 0;
+		tlist[i][1] = tlooplist[i][1];
+		tlooplist[i][1] = 0;
+		tlist[i][2] = tlooplist[i][2];
+		tlooplist[i][2] = 0;
+	}
+	computeTrianglesNormals();
+	findFNext();
+	computeComponents();
+	computeVertexNormals();
 }
 
 void myObjType::load3DS(char* p_filename) {
