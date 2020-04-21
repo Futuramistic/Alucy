@@ -185,6 +185,10 @@ void keyboard (unsigned char key, int x, int y)
 		cin >> percentage;
 		myObj.simplifyMesh(percentage*myObj.tcount);
 		break;
+	case 'F':
+	case 'f':
+		myObj.loopSubdivide();
+		break;
 	default:
 	break;
 	}

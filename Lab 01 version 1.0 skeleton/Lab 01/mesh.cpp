@@ -214,7 +214,7 @@ int myObjType::dest(OrTri ot) {
 
 void myObjType::findFNext(){
 	std::map<std::pair<int, int>, int> hashMap;
-	for (int i = 1; i <= tcount; ++i) {
+	for (int i = 1; i <= tcount; ++i){
 		for (int j = 0; j < 3; ++j) {
 			int oriTri = makeOrTri(i, j);
 			int start = org(oriTri), end = dest(oriTri);
@@ -286,6 +286,28 @@ void myObjType::computeTriangleNormal(int i) {
 	nlist[i][2] = nz;
 }
 
+std::vector<double> myObjType::computeTriangleNormal(double vertex1[3], double vertex2[3], double vertex3[3]) {
+	double ax = vertex2[0] - vertex1[0];
+	double ay = vertex2[1] - vertex1[1];
+	double az = vertex2[2] - vertex1[2];
+
+	double bx = vertex3[0] - vertex1[0];
+	double by = vertex3[1] - vertex1[1];
+	double bz = vertex3[2] - vertex1[2];
+
+	double nx = (ay * bz) - (az * by);
+	double ny = (az * bx) - (ax * bz);
+	double nz = (ax * by) - (ay * bx);
+
+	double length = sqrt(nx * nx + ny * ny + nz * nz);
+	if (length > 0.0) {
+		nx /= length;
+		ny /= length;
+		nz /= length;
+	}
+	return std::vector<double>{nx, ny, nz};
+}
+
 
 
 void myObjType::computeAngles() {
@@ -336,6 +358,7 @@ void myObjType::computeAngles() {
 }
 
 void myObjType::computeComponents() {
+	clist.clear();
 	std::set<int> triangles;
 	for (int i = 1; i <= tcount; ++i) {
 		triangles.insert(i);
@@ -635,48 +658,50 @@ double myObjType::computeEdgeCollapseCost(int vertex, int neighbour) {
 
 void myObjType::computeEven(int triangle) {
 	for (int j = 0; j < 3; ++j) {
-		bool crease = false;
-		//check if boundary vertex
-		if (!crease) {
-			int k = neighbours[tlist[triangle][j]].size();
-			double beta = 1 / k * (5 / 8 - std::pow(2, (3 / 8 + 1 / 4 * cos(2 * M_PI / k))));
-			double x = 0;
-			double y = 0;
-			double z = 0;
-			for (set<int>::iterator it = neighbours[tlist[triangle][j]].begin(); it != neighbours[tlist[triangle][j]].end(); ++it) {
-				x += vlist[*it][0];
-				y += vlist[*it][1];
-				z += vlist[*it][2];
+		if (vlooplist[tlist[triangle][j]][0] == 0) {
+			bool crease = false;
+			//check if boundary vertex
+			if (!crease) {
+				int k = neighbours[tlist[triangle][j]].size();
+				double beta = 1 / k * (5 / 8 - std::pow(2, (3 / 8 + 1 / 4 * cos(2 * M_PI / k))));
+				double x = 0;
+				double y = 0;
+				double z = 0;
+				for (set<int>::iterator it = neighbours[tlist[triangle][j]].begin(); it != neighbours[tlist[triangle][j]].end(); ++it) {
+					x += vlist[*it][0];
+					y += vlist[*it][1];
+					z += vlist[*it][2];
+				}
+				double vx = vlist[tlist[triangle][j]][0];
+				double vy = vlist[tlist[triangle][j]][1];
+				double vz = vlist[tlist[triangle][j]][2];
+				vlooplist[tlist[triangle][j]][0] = vx * (1.0 - (k * beta)) + x * beta;
+				vlooplist[tlist[triangle][j]][1] = vy * (1.0 - (k * beta)) + y * beta;
+				vlooplist[tlist[triangle][j]][2] = vz * (1.0 - (k * beta)) + z * beta;
 			}
-			double vx = vlist[tlist[triangle][j]][0];
-			double vy = vlist[tlist[triangle][j]][1];
-			double vz = vlist[tlist[triangle][j]][2];
-			vlooplist[tlist[triangle][j]][0] = vx * (1.0 - (k * beta)) + x * beta;
-			vlooplist[tlist[triangle][j]][1] = vy * (1.0 - (k * beta)) + y * beta;
-			vlooplist[tlist[triangle][j]][2] = vz * (1.0 - (k * beta)) + z * beta;
-		}
-		else {
-			double vx = vlist[tlist[triangle][j]][0];
-			double vy = vlist[tlist[triangle][j]][1];
-			double vz = vlist[tlist[triangle][j]][2];
-			vlooplist[tlist[triangle][j]][0] = 0.75 * vx;
-			vlooplist[tlist[triangle][j]][1] = 0.75 * vy;
-			vlooplist[tlist[triangle][j]][2] = 0.75 * vz;
+			else {
+				double vx = vlist[tlist[triangle][j]][0];
+				double vy = vlist[tlist[triangle][j]][1];
+				double vz = vlist[tlist[triangle][j]][2];
+				vlooplist[tlist[triangle][j]][0] = 0.75 * vx;
+				vlooplist[tlist[triangle][j]][1] = 0.75 * vy;
+				vlooplist[tlist[triangle][j]][2] = 0.75 * vz;
+			}
 		}
 	}
 }
 
-void myObjType::computeOdd(int triangle) {
-	for (int j = 0; j < 3; ++j) {
-		if (idx(fnlist[triangle][j]) == triangle) {
+int myObjType::computeOdd(int triangle, int j, std::map<std::pair<int, int>, int> &odds) {
+	if (idx(fnlist[triangle][j]) == triangle) {
 			++vcount;
 			int a = org(fnlist[triangle][j]);
 			int b = dest(fnlist[triangle][j]);
 			vlooplist[vcount][0] = 1.0 / 2.0 * (vlist[a][0] + vlist[b][0]);
 			vlooplist[vcount][1] = 1.0 / 2.0 * (vlist[a][1] + vlist[b][1]);
 			vlooplist[vcount][2] = 1.0 / 2.0 * (vlist[a][2] + vlist[b][2]);
-		}
-		else {
+			return vcount;
+	}
+	else{
 			int a = org(fnlist[triangle][j]);
 			int b = dest(fnlist[triangle][j]);
 			int c, d;
@@ -690,62 +715,122 @@ void myObjType::computeOdd(int triangle) {
 					d = tlist[triangle][i];
 				}
 			}
-			++vcount;
-			vlooplist[vcount][0] = (3.0 / 8.0) * (vlist[a][0] + vlist[b][0])+ (1.0/8.0) * (vlist[c][0] + vlist[d][0]);
-			vlooplist[vcount][1] = (3.0 / 8.0) * (vlist[a][1] + vlist[b][1]) + (1.0 / 8.0) * (vlist[c][1] + vlist[d][1]);
-			vlooplist[vcount][2] = (3.0 /8.0) *  (vlist[a][2] + vlist[b][2]) + (1.0 /8.0) * (vlist[c][2] + vlist[d][2]);
-		}
+			std::pair<int, int> pair = { c,d };
+			std::map<std::pair<int, int>, int>::iterator it = odds.find(pair);
+			if (it!=odds.end()) {
+				int value = odds.at(pair);
+				return value;
+			}
+			else {
+				pair = { d,c };
+				std::map<std::pair<int, int>, int>::iterator it = odds.find(pair);
+				if(it != odds.end()){
+					int value = odds.at(pair);
+					return value;
+				}
+				else {
+					++vcount;
+					vlooplist[vcount][0] = (3.0 / 8.0) * (vlist[a][0] + vlist[b][0]) + (1.0 / 8.0) * (vlist[c][0] + vlist[d][0]);
+					vlooplist[vcount][1] = (3.0 / 8.0) * (vlist[a][1] + vlist[b][1]) + (1.0 / 8.0) * (vlist[c][1] + vlist[d][1]);
+					vlooplist[vcount][2] = (3.0 / 8.0) * (vlist[a][2] + vlist[b][2]) + (1.0 / 8.0) * (vlist[c][2] + vlist[d][2]);
+					odds.emplace(pair, vcount);
+					return vcount;
+				}	
+			}
 	}
 }
 
+
 void myObjType::loopSubdivide(){
+	std::map<std::pair<int, int>, int> odds =  std::map<std::pair<int, int>, int>();
 	getNeighbours();
+	int odd[3];
 	int triangles = tcount;
 	for (int i = 1; i <= triangles; ++i) {
-		computeOdd(i);
+		for (int j = 0; j < 3; ++j) {
+			odd[j]=computeOdd(i,j,odds);
+		}
 		computeEven(i);
-		int odd1 = vcount - 2;
-		int odd2 = vcount - 1;
-		int odd3 = vcount;
-		int even1 = tlist[i][0];
-		int even2 = tlist[i][1];
-		int even3 = tlist[i][2];
-		tlooplist[i][0] = odd1;
-		tlooplist[i][1] = odd2; 
-		tlooplist[i][2] = odd3;
-		++tcount;
-		tlooplist[tcount][0] = even2;
-		tlooplist[tcount][1] = odd2;
-		tlooplist[tcount][2] = odd1;
-		++tcount;
-		tlooplist[tcount][0] = even1;
-		tlooplist[tcount][1] = odd1;
-		tlooplist[tcount][2] = odd3;
-		++tcount;
-		tlooplist[tcount][0] = even3;
-		tlooplist[tcount][1] = odd3;
-		tlooplist[tcount][2] = odd2;
+		mergeTriangles(i,odd);
 	}
 	for (int i = 1; i <= vcount; ++i) {
 		vlist[i][0] = vlooplist[i][0];
-		vlooplist[i][0] = 0;
 		vlist[i][1] = vlooplist[i][1];
-		vlooplist[i][1] = 0;
 		vlist[i][2] = vlooplist[i][2];
+		vlooplist[i][0] = 0;
+		vlooplist[i][1] = 0;
 		vlooplist[i][2] = 0;
 	}
 	for (int i = 1; i <= tcount; ++i) {
 		tlist[i][0] = tlooplist[i][0];
-		tlooplist[i][0] = 0;
 		tlist[i][1] = tlooplist[i][1];
-		tlooplist[i][1] = 0;
 		tlist[i][2] = tlooplist[i][2];
+		tlooplist[i][0] = 0;
+		tlooplist[i][1] = 0;
 		tlooplist[i][2] = 0;
 	}
-	computeTrianglesNormals();
-	findFNext();
-	computeComponents();
-	computeVertexNormals();
+	orientTriangles();
+	computeInfo();
+}
+
+void myObjType::mergeTriangles(int i, int odd[3]){
+	int odd1 = odd[0];
+	int odd2 = odd[1];
+	int odd3 = odd[2];
+	int even1 = tlist[i][0];
+	int even2 = tlist[i][1];
+	int even3 = tlist[i][2];
+	tlooplist[i][0] = odd1;
+	tlooplist[i][1] = odd2;
+	tlooplist[i][2] = odd3;
+	std::vector<double> normal = computeTriangleNormal(vlooplist[odd1], vlooplist[odd2], vlooplist[odd3]);
+	double nx = normal.at(0);
+	double ny = normal.at(1);
+	double nz = normal.at(2);
+	if (nx * nlist[i][0] + ny * nlist[i][1] + nz * nlist[i][2] < 0) {
+		tlooplist[i][0] = odd2;
+		tlooplist[i][1] = odd1;
+		tlooplist[i][2] = odd3;
+	}
+	++tcount;
+	tlooplist[tcount][0] = even2;
+	tlooplist[tcount][1] = odd2;
+	tlooplist[tcount][2] = odd1;
+	normal = computeTriangleNormal(vlooplist[even2], vlooplist[odd2], vlooplist[odd1]);
+	nx = normal.at(0);
+	ny = normal.at(1);
+	nz = normal.at(2);
+	if (nx * nlist[i][0] + ny * nlist[i][1] + nz * nlist[i][2] < 0) {
+		tlooplist[tcount][0] = odd2;
+		tlooplist[tcount][1] = even2;
+		tlooplist[tcount][2] = odd1;
+	}
+	++tcount;
+	tlooplist[tcount][0] = even1;
+	tlooplist[tcount][1] = odd1;
+	tlooplist[tcount][2] = odd3;
+	normal = computeTriangleNormal(vlooplist[even1], vlooplist[odd1], vlooplist[odd3]);
+	nx = normal.at(0);
+	ny = normal.at(1);
+	nz = normal.at(2);
+	if (nx * nlist[i][0] + ny * nlist[i][1] + nz * nlist[i][2] < 0) {
+		tlooplist[tcount][0] = odd1;
+		tlooplist[tcount][1] = even1;
+		tlooplist[tcount][2] = odd3;
+	}
+	++tcount;
+	tlooplist[tcount][0] = even3;
+	tlooplist[tcount][1] = odd3;
+	tlooplist[tcount][2] = odd2;
+	normal = computeTriangleNormal(vlooplist[even3], vlooplist[odd3], vlooplist[odd2]);
+	nx = normal.at(0);
+	ny = normal.at(1);
+	nz = normal.at(2);
+	if (nx * nlist[i][0] + ny * nlist[i][1] + nz * nlist[i][2] < 0) {
+		tlooplist[tcount][0] = odd3;
+		tlooplist[tcount][1] = even3;
+		tlooplist[tcount][2] = odd2;
+	}
 }
 
 void myObjType::load3DS(char* p_filename) {
