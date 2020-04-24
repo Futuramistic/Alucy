@@ -179,6 +179,7 @@ void myObjType::readFile(char* filename)
 }
 
 void myObjType::computeInfo(){
+	getNeighbours();
 	computeTrianglesNormals();
 	findFNext();
 	computeComponents();
@@ -213,6 +214,11 @@ int myObjType::dest(OrTri ot) {
 }
 
 void myObjType::findFNext(){
+	for (int i = 1; i <=tcount; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			fnlist[i][j] = 0;
+		}
+	}
 	std::map<std::pair<int, int>, int> hashMap;
 	for (int i = 1; i <= tcount; ++i){
 		for (int j = 0; j < 3; ++j) {
@@ -440,7 +446,9 @@ void myObjType::orientTriangles(){
 						int temp = tlist[next][0];
 						tlist[next][0] = tlist[next][1];
 						tlist[next][1] = temp;
-						computeTriangleNormal(next);
+						for (int k = 0; k < 3;++k) {
+							nlist[next][k] *= -1;
+						}
 					}
 					else {
 						orientable = false;
@@ -458,8 +466,9 @@ void myObjType::orientTriangles(){
 		computeVertexNormals();
 	}
 
-void myObjType::toggleBoundry() {
+bool myObjType::toggleBoundry() {
 	boundry = !boundry;
+	return boundry;
 }
 
 void myObjType::computeVertexNormals() {
@@ -527,6 +536,7 @@ void myObjType::getNeighbours() {
 
 void myObjType::simplifyMesh(int faceCount) {
 	while (tcount > faceCount) {
+		cout << "TRIANGLES: " << tcount<<endl;
 		getNeighbours();
 		computeTrianglesNormals();
 		for (int i = 1; i <= vcount; ++i) {
@@ -643,7 +653,6 @@ double myObjType::computeEdgeCollapseCost(int vertex, int neighbour) {
 		int triangle = *it;
 		if (hasVertex(neighbour,triangle)){ sides.push_back(triangle); }
 	}
-
 	for (set<int>::iterator it = facelist[vertex].begin(); it != facelist[vertex].end(); ++it) {
 		double minCurv = 1.0;
 		for (int j = 0; j < sides.size(); j++) {
@@ -653,7 +662,7 @@ double myObjType::computeEdgeCollapseCost(int vertex, int neighbour) {
 		}
 		if (curvature<minCurv){curvature = minCurv;}
 	}
-	return edgeLength*curvature;
+	return (edgeLength*curvature)/(std::pow(facelist[vertex].size(),2));
 }
 
 void myObjType::computeEven(int triangle) {
@@ -661,6 +670,37 @@ void myObjType::computeEven(int triangle) {
 		if (vlooplist[tlist[triangle][j]][0] == 0) {
 			bool crease = false;
 			//check if boundary vertex
+			int vertex = tlist[triangle][j];
+			double angle = 1.0;
+			int vertices[2];
+			std::vector<int> sides;
+			std::vector<int> nei;
+			for (set<int>::iterator it = neighbours[vertex].begin(); it != neighbours[vertex].end(); ++it) {
+				int neighbour = *it;
+				for (set<int>::iterator it = facelist[neighbour].begin(); it != facelist[neighbour].end(); ++it) {
+					if (hasVertex(vertex, *it) && *it!=triangle) { 
+						sides.push_back(triangle);
+						nei.push_back(neighbour);
+					}
+				}
+			}
+			for (set<int>::iterator it = facelist[vertex].begin(); it != facelist[vertex].end(); ++it) {
+				double minCos = 1.0;
+				for (int j = 0; j < sides.size(); j++) {
+					int side = sides.at(j);
+					double dotProd = (nlist[*it][0] * nlist[side][0]) + (nlist[*it][1] * nlist[side][1]) + (nlist[*it][2] * nlist[side][2]);
+					double cos =dotProd/(sqrt(nlist[*it][0] * nlist[*it][0] + nlist[*it][1] * nlist[*it][1] + nlist[*it][2] * nlist[*it][2]) *
+							   sqrt(nlist[side][0] * nlist[side][0] + nlist[side][1] * nlist[side][1] + nlist[side][2] * nlist[side][2]));
+					if (minCos > abs(cos)) { 
+						minCos = cos;
+						vertices[0] = nei.at(j);
+					};
+				}
+				if (angle > minCos) { angle = minCos; }
+			}
+			if (abs(angle) < 0.99) {
+				crease = true;
+			}
 			if (!crease) {
 				int k = neighbours[tlist[triangle][j]].size();
 				double beta = 1 / k * (5 / 8 - std::pow(2, (3 / 8 + 1 / 4 * cos(2 * M_PI / k))));
@@ -680,12 +720,19 @@ void myObjType::computeEven(int triangle) {
 				vlooplist[tlist[triangle][j]][2] = vz * (1.0 - (k * beta)) + z * beta;
 			}
 			else {
+				int a = vertices[0];
+				int b;
+				for (int i = 0; i < 3; ++i) {
+					if (tlist[triangle][i] != a && tlist[triangle][i] != vertex) {
+						b = tlist[triangle][i];
+					}
+				}
 				double vx = vlist[tlist[triangle][j]][0];
 				double vy = vlist[tlist[triangle][j]][1];
 				double vz = vlist[tlist[triangle][j]][2];
-				vlooplist[tlist[triangle][j]][0] = 0.75 * vx;
-				vlooplist[tlist[triangle][j]][1] = 0.75 * vy;
-				vlooplist[tlist[triangle][j]][2] = 0.75 * vz;
+				vlooplist[tlist[triangle][j]][0] = 0.75 * vx + 0.125 * (vlist[a][0]+ vlist[b][0]);
+				vlooplist[tlist[triangle][j]][1] = 0.75 * vy + 0.125 * (vlist[a][1] + vlist[b][1]);
+				vlooplist[tlist[triangle][j]][2] = 0.75 * vz + 0.125 * (vlist[a][2] + vlist[b][2]);
 			}
 		}
 	}
@@ -769,7 +816,6 @@ void myObjType::loopSubdivide(){
 		tlooplist[i][1] = 0;
 		tlooplist[i][2] = 0;
 	}
-	orientTriangles();
 	computeInfo();
 }
 
@@ -796,7 +842,7 @@ void myObjType::mergeTriangles(int i, int odd[3]){
 	tlooplist[tcount][0] = odd2;
 	tlooplist[tcount][1] = odd1;
 	tlooplist[tcount][2] = even2;
-	normal = computeTriangleNormal(vlooplist[even2], vlooplist[odd2], vlooplist[odd1]);
+	normal = computeTriangleNormal(vlooplist[odd2], vlooplist[odd1], vlooplist[even2]);
 	nx = normal.at(0);
 	ny = normal.at(1);
 	nz = normal.at(2);
@@ -809,7 +855,7 @@ void myObjType::mergeTriangles(int i, int odd[3]){
 	tlooplist[tcount][0] = odd1;
 	tlooplist[tcount][1] = odd3;
 	tlooplist[tcount][2] = even1;
-	normal = computeTriangleNormal(vlooplist[even1], vlooplist[odd1], vlooplist[odd3]);
+	normal = computeTriangleNormal(vlooplist[odd1], vlooplist[odd3], vlooplist[even1]);
 	nx = normal.at(0);
 	ny = normal.at(1);
 	nz = normal.at(2);
@@ -833,6 +879,86 @@ void myObjType::mergeTriangles(int i, int odd[3]){
 	}
 }
 
-void myObjType::load3DS(char* p_filename) {
 
+void myObjType::loadSTL(char* fname) {
+	ifstream myFile(fname);
+	if (!myFile) {
+		cout << "We cannot find your file " << fname << endl;
+		exit(1);
+	}
+	string buffer;
+	vector<string> tokens;
+	int maxNumTokens = 0;
+	bool firstVertex = 1;
+	int vertices[3];
+	int triangleVertex = 0;
+	vcount = 1;
+	tcount = 1;
+	while (!(myFile.eof() || myFile.fail()))
+	{
+		getline(myFile, buffer);
+		istringstream line(buffer);
+		int tokenCount = 0;
+		while (!(line.eof() || line.fail())) {
+			if (tokenCount >= maxNumTokens) {
+				maxNumTokens = tokenCount + 1;
+				tokens.resize(maxNumTokens);
+			}
+			line >> tokens[tokenCount];
+			++tokenCount;
+		}
+		if (tokenCount > 0)
+		{
+			string& tok = tokens[0];
+			if (tok.compare("vertex")== 0){
+				double c[3];
+				for (int i = 0; i < 3; ++i) {
+					double currCood = static_cast<double> (atof(tokens[i + 1].c_str()));
+					if (firstVertex)
+						lmin[i] = lmax[i] = currCood;
+					else {
+						if (lmin[i] > currCood)
+							lmin[i] = currCood;
+						if (lmax[i] < currCood)
+							lmax[i] = currCood;
+					}
+					c[i] = currCood;
+				}
+				bool found = false;
+				int vertexFound;
+				for (int i = 1; i < vcount; ++i) {
+					if (vlist[i][0] == c[0] && vlist[i][1] == c[1] && vlist[i][2] == c[2]) {
+						found = true;
+						vertexFound = i;
+					}
+				}
+				if (!found) {
+					for (int i = 0; i < 3; ++i) {
+						vlist[vcount][i] = c[i];
+					}
+					vertices[triangleVertex] = vcount;
+					++vcount;
+				}
+				else {
+					vertices[triangleVertex] = vertexFound;
+				}
+				firstVertex = 0;
+				++triangleVertex;
+			}
+			else if (tok.compare("facet")==0){
+			}
+			else if (tok.compare("outer")==0 || tok.compare("endsolid") == 0) {
+			}
+			else if (tok.compare("endfacet") == 0){
+				for (int i = 0; i < 3; ++i) {
+					tlist[tcount][i] = vertices[i];
+				}
+				triangleVertex = 0;
+				++tcount;
+			}
+		}
+	}
+	computeInfo();
+	return;
 }
+

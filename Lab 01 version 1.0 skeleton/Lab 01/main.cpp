@@ -122,6 +122,7 @@ void displayGouraud(void)
 void keyboard (unsigned char key, int x, int y)
 {
 	char filename[256];
+	bool boundary;
 	switch (key) {
 	case 'p':
 	case 'P':
@@ -165,7 +166,15 @@ void keyboard (unsigned char key, int x, int y)
 		break;
 	case 'b':
 	case 'B':
-		myObj.toggleBoundry();
+		boundary = myObj.toggleBoundry();
+		cout << "BOUNDARY: ";
+		if (boundary) {
+			cout << "ON";
+		}
+		else{
+			cout << "OFF";
+		}
+		cout << endl;
 		break;
 	case '1':
 	case '2':
@@ -188,6 +197,12 @@ void keyboard (unsigned char key, int x, int y)
 	case 'F':
 	case 'f':
 		myObj.loopSubdivide();
+		break;
+	case 'Z':
+	case 'z':
+		cout << "Enter the STL filename you want to read:";
+		cin >> filename;
+		myObj.loadSTL(filename);
 		break;
 	default:
 	break;
@@ -253,6 +268,7 @@ int main(int argc, char **argv)
 	cout << "G: Toggle Gouraud shading" << endl;
 	cout << "B: Toggle Components Boundries" << endl;
 	cout << "T: Simplify Mesh" << endl;
+	cout << "Z: Read STL file" << endl;
 	cout << "O: Write to file" << endl << endl;
 
 	cout << "Left mouse click and drag: rotate the object"<<endl;

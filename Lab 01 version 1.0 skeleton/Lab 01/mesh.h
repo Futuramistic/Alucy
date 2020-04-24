@@ -6,6 +6,10 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <streambuf>
 
 typedef int OrTri;
 typedef int tIdx;
@@ -56,7 +60,7 @@ public:
 	myObjType() { vcount = 0; tcount = 0; };
 	int tcount=0;
 	void readFile(char* filename);  // assumming file contains a manifold
-	void load3DS(char* filename);
+	void loadSTL(char* filename);
 	void orientTriangles();
 	void writeFile(char* filename);
 	void PrintInfo();
@@ -77,13 +81,17 @@ public:
 	bool hasVertex(int vertex, int triangle);
 	void computeAngles();
 	void computeTriangleNormal(int i);
+	float parseFloat(std::ifstream& s);
+	void parseNormal(int triangle, std::ifstream& s);
+	void parsePoint(int triangle, int vertexPos, std::ifstream& s);
+	
 	int org(OrTri ot);
 	int dest(OrTri ot);
 	void findFNext();
 	void displayBoundries();
 	void computeComponents();
 	void getNeighbours();
-	void toggleBoundry();
+	bool toggleBoundry();
 	void simplifyMesh(int faceCount);
 	void computeEdgeCost(int vertex);
 	double computeEdgeCollapseCost(int vertex, int neighbour);
