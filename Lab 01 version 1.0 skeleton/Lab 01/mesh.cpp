@@ -674,6 +674,8 @@ double myObjType::computeEdgeCollapseCost(int vertex, int neighbour) {
 }
 
 void myObjType::computeEven(int triangle) {
+	//CODE COMMENTED AS I WILL TRY TO WORK ON THIS IN THE FUTURE
+	/**
 	for (int j = 0; j < 3; ++j) {
 		if (vlooplist[tlist[triangle][j]][0] == 0) {
 			bool crease = false;
@@ -742,6 +744,13 @@ void myObjType::computeEven(int triangle) {
 				vlooplist[tlist[triangle][j]][1] = 0.75 * vy + 0.125 * (vlist[a][1] + vlist[b][1]);
 				vlooplist[tlist[triangle][j]][2] = 0.75 * vz + 0.125 * (vlist[a][2] + vlist[b][2]);
 			}
+		}
+	}
+	**/
+	//Don't move the previous vertices
+	for (int i = 0; i < 3; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			vlooplist[tlist[triangle][i]][j] = vlist[tlist[triangle][i]][j];
 		}
 	}
 }
