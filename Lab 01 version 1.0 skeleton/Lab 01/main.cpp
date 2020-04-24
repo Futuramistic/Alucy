@@ -198,12 +198,6 @@ void keyboard (unsigned char key, int x, int y)
 	case 'f':
 		myObj.loopSubdivide();
 		break;
-	case 'Z':
-	case 'z':
-		cout << "Enter the STL filename you want to read:";
-		cin >> filename;
-		myObj.loadSTL(filename);
-		break;
 	default:
 	break;
 	}
@@ -253,7 +247,14 @@ int main(int argc, char **argv)
 
 	cout << "Enter the filename you want to open:";
 	cin >> filename;
-	myObj.readFile(filename);
+	string extension = ((string)filename).substr(((string)filename).find_last_of(".") + 1);
+	if ( extension == "stl") {
+		myObj.loadSTL(filename);
+	}
+	else{
+		myObj.readFile(filename);
+	}
+	
 
 
 
@@ -268,7 +269,7 @@ int main(int argc, char **argv)
 	cout << "G: Toggle Gouraud shading" << endl;
 	cout << "B: Toggle Components Boundries" << endl;
 	cout << "T: Simplify Mesh" << endl;
-	cout << "Z: Read STL file" << endl;
+	cout << "F: Loop Subdivide" << endl;
 	cout << "O: Write to file" << endl << endl;
 
 	cout << "Left mouse click and drag: rotate the object"<<endl;
