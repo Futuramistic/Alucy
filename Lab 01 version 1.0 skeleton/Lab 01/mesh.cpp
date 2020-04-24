@@ -318,6 +318,8 @@ std::vector<double> myObjType::computeTriangleNormal(double vertex1[3], double v
 
 void myObjType::computeAngles() {
 	for (int i = 1; i <= tcount; ++i) {
+		int minBucket=18;
+		int maxBucket = 0;
 		for (int j = 0; j < 3; ++j) {
 			int first;
 			int second;
@@ -351,8 +353,12 @@ void myObjType::computeAngles() {
 
 			float alpha = acos((ax * bx + ay * by + az * bz) / (alength * blength)) * 180 / M_PI;
 			int bucket = floor(alpha / 10);
-			++statMaxAngle[bucket];
-			++statMinAngle[bucket];
+			if (bucket < minBucket) {
+				minBucket = bucket;
+			}
+			if (bucket > maxBucket) {
+				maxBucket = bucket;
+			}
 			if (alpha > maxAngle) {
 				maxAngle = alpha;
 			}
@@ -360,6 +366,8 @@ void myObjType::computeAngles() {
 				minAngle = alpha;
 			}
 		}
+		++statMinAngle[minBucket];
+		++statMaxAngle[maxBucket];
 	}
 }
 
@@ -691,12 +699,12 @@ void myObjType::computeEven(int triangle) {
 					double dotProd = (nlist[*it][0] * nlist[side][0]) + (nlist[*it][1] * nlist[side][1]) + (nlist[*it][2] * nlist[side][2]);
 					double cos =dotProd/(sqrt(nlist[*it][0] * nlist[*it][0] + nlist[*it][1] * nlist[*it][1] + nlist[*it][2] * nlist[*it][2]) *
 							   sqrt(nlist[side][0] * nlist[side][0] + nlist[side][1] * nlist[side][1] + nlist[side][2] * nlist[side][2]));
-					if (minCos > abs(cos)) { 
+					if (abs(minCos) > abs(cos)) { 
 						minCos = cos;
 						vertices[0] = nei.at(j);
 					};
 				}
-				if (angle > minCos) { angle = minCos; }
+				if (abs(angle) > abs(minCos)) { angle = minCos; }
 			}
 			if (abs(angle) < 0.99) {
 				crease = true;

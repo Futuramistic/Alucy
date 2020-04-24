@@ -51,6 +51,7 @@ class myObjType {
 	int statMaxAngle[18];
 	double maxAngle = 0;
 	double minAngle = 180;
+	double vertexAngle[MAXV];
 
 	bool orientable = true;
 	bool computedTriangleOrientation = false;
