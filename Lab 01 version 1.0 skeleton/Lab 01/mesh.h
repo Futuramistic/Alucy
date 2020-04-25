@@ -72,6 +72,8 @@ public:
 	void computeTrianglesNormals();
 	void computeVertexNormals();
 	void computeBoundryEdges();
+	void copyEven(int triangle);
+	void clearLoop();
 	std::vector<double> computeTriangleNormal(double vertex1[3], double vertex2[3], double vertex3[3]);
 	void mergeTriangles(int i, int odd[3]);
 	int computeOdd(int triangle,int j, std::map<std::pair<int, int>, int> &odds);

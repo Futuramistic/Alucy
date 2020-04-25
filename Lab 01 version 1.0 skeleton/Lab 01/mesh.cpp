@@ -434,45 +434,39 @@ void myObjType::computeStat()
 
 void myObjType::orientTriangles(){
 	if (!orientable) {
-		cout << "Not orientable" << endl;
+		cout << "ERROR: MESH CANNOT BE ORIENTED" << endl;
 		return;
 	}
-	for (int i = 0; i < clist.size(); ++i) {
-		std::set<int> component = clist[i];
-		int start = *component.begin();
-		std::priority_queue<int> queue;
-		queue.push(start);
-		while (!queue.empty() && orientable) {
-			int index = queue.top();
-			queue.pop();
-			for (int j = 0; j < 3; ++j) {
-				int next = idx(fnlist[index][j]);
-				double dot = nlist[next][0] * nlist[index][0] + nlist[next][1] * nlist[index][1] + nlist[next][2] * nlist[index][2];
-				if (dot < 0.0) {
-					if (component.find(next) != component.end()) {
-						queue.push(next);
-						int temp = tlist[next][0];
-						tlist[next][0] = tlist[next][1];
-						tlist[next][1] = temp;
-						for (int k = 0; k < 3;++k) {
-							nlist[next][k] *= -1;
-						}
-					}
-					else {
-						orientable = false;
-						break;
-					}
-				}
+	set<int> flipped;
+	for (int i = 1; i <= tcount; ++i) {
+		//Get this triangle info
+		int ori = makeOrTri(i, 0);
+		int start = org(ori);
+		int end = dest(ori);
+		//Get neighbour triangle info
+		int next = fnlist[i][0];
+		int nextIdx = idx(next);
+		int nextStart = org(next);
+		int nextEnd = dest(next);
+		if (nextEnd == end || nextStart == start && nextIdx != i)
+		{	
+			if (flipped.find(nextIdx) != flipped.end()){
+				orientable = false;
+				cout <<"ERROR: MESH CANNOT BE ORIENTED"<<endl;
+				return;
 			}
-			component.erase(index);
-		}
-		if (!orientable) {
-			cout << "Not orientable" << endl;
-			return;
+			if (nextIdx < i){
+				int temp = tlist[nextIdx][0];
+				tlist[nextIdx][0] = tlist[nextIdx][1];
+				tlist[nextIdx][1] = temp;
+				computeTriangleNormal(nextIdx);
+				flipped.insert(nextIdx);
+			}
 		}
 	}
-		computeVertexNormals();
-	}
+	findFNext();
+	computeVertexNormals();
+}
 
 bool myObjType::toggleBoundry() {
 	boundry = !boundry;
@@ -544,7 +538,6 @@ void myObjType::getNeighbours() {
 
 void myObjType::simplifyMesh(int faceCount) {
 	while (tcount > faceCount) {
-		cout << "TRIANGLES: " << tcount<<endl;
 		getNeighbours();
 		computeTrianglesNormals();
 		for (int i = 1; i <= vcount; ++i) {
@@ -673,9 +666,16 @@ double myObjType::computeEdgeCollapseCost(int vertex, int neighbour) {
 	return (edgeLength*curvature)/(std::pow(facelist[vertex].size(),2));
 }
 
+void myObjType::copyEven(int triangle) {
+	//Don't move the previous vertices
+	for (int i = 0; i < 3; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			vlooplist[tlist[triangle][i]][j] = vlist[tlist[triangle][i]][j];
+		}
+	}
+}
+
 void myObjType::computeEven(int triangle) {
-	//CODE COMMENTED AS I WILL TRY TO WORK ON THIS IN THE FUTURE
-	/**
 	for (int j = 0; j < 3; ++j) {
 		if (vlooplist[tlist[triangle][j]][0] == 0) {
 			bool crease = false;
@@ -688,7 +688,7 @@ void myObjType::computeEven(int triangle) {
 			for (set<int>::iterator it = neighbours[vertex].begin(); it != neighbours[vertex].end(); ++it) {
 				int neighbour = *it;
 				for (set<int>::iterator it = facelist[neighbour].begin(); it != facelist[neighbour].end(); ++it) {
-					if (hasVertex(vertex, *it) && *it!=triangle) { 
+					if (hasVertex(vertex, *it) && *it!=triangle) {
 						sides.push_back(triangle);
 						nei.push_back(neighbour);
 					}
@@ -701,7 +701,7 @@ void myObjType::computeEven(int triangle) {
 					double dotProd = (nlist[*it][0] * nlist[side][0]) + (nlist[*it][1] * nlist[side][1]) + (nlist[*it][2] * nlist[side][2]);
 					double cos =dotProd/(sqrt(nlist[*it][0] * nlist[*it][0] + nlist[*it][1] * nlist[*it][1] + nlist[*it][2] * nlist[*it][2]) *
 							   sqrt(nlist[side][0] * nlist[side][0] + nlist[side][1] * nlist[side][1] + nlist[side][2] * nlist[side][2]));
-					if (abs(minCos) > abs(cos)) { 
+					if (abs(minCos) > abs(cos)) {
 						minCos = cos;
 						vertices[0] = nei.at(j);
 					};
@@ -744,13 +744,6 @@ void myObjType::computeEven(int triangle) {
 				vlooplist[tlist[triangle][j]][1] = 0.75 * vy + 0.125 * (vlist[a][1] + vlist[b][1]);
 				vlooplist[tlist[triangle][j]][2] = 0.75 * vz + 0.125 * (vlist[a][2] + vlist[b][2]);
 			}
-		}
-	}
-	**/
-	//Don't move the previous vertices
-	for (int i = 0; i < 3; ++i) {
-		for (int j = 0; j < 3; ++j) {
-			vlooplist[tlist[triangle][i]][j] = vlist[tlist[triangle][i]][j];
 		}
 	}
 }
@@ -814,9 +807,14 @@ void myObjType::loopSubdivide(){
 		for (int j = 0; j < 3; ++j) {
 			odd[j]=computeOdd(i,j,odds);
 		}
-		computeEven(i);
+		copyEven(i);
 		mergeTriangles(i,odd);
 	}
+	clearLoop();
+	computeInfo();
+}
+
+void myObjType::clearLoop() {
 	for (int i = 1; i <= vcount; ++i) {
 		vlist[i][0] = vlooplist[i][0];
 		vlist[i][1] = vlooplist[i][1];
@@ -833,7 +831,6 @@ void myObjType::loopSubdivide(){
 		tlooplist[i][1] = 0;
 		tlooplist[i][2] = 0;
 	}
-	computeInfo();
 }
 
 void myObjType::mergeTriangles(int i, int odd[3]){
