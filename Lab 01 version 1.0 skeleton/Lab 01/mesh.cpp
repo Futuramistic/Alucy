@@ -459,6 +459,10 @@ void myObjType::orientTriangles(){
 				int temp = tlist[nextIdx][0];
 				tlist[nextIdx][0] = tlist[nextIdx][1];
 				tlist[nextIdx][1] = temp;
+				for (int j = 0; j < 3; ++j) {
+					fnlist[nextIdx][j] = sym(fnlist[nextIdx][j]);
+				}
+				fnlist[i][0] = sym(fnlist[i][0]);
 				computeTriangleNormal(nextIdx);
 				flipped.insert(nextIdx);
 			}
