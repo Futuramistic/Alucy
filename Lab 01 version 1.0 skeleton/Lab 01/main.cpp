@@ -91,34 +91,6 @@ void display(void)
 	glutSwapBuffers ();
 }
 
-void displayGouraud(void)
-{
-
-	float mat_specular[] = { 0.3f, 0.3f, 0.3f, 1.0f };
-	float mat_ambient[] = { 0.3f, 0.3f, 0.3f, 1.0f };
-	float mat_ambient_color[] = { 0.8f, 0.8f, 0.2f, 1.0f };
-	float mat_diffuse[] = { 0.1f, 0.5f, 0.8f, 1.0f };
-	float shininess = 20;
-	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
-
-	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-	glMaterialf(GL_FRONT, GL_SHININESS, shininess);
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glPushMatrix();
-	gluLookAt(0, 0, 10, 0, 0, 0, 0, 1, 0);
-	glRotatef(angle2, 1.0, 0.0, 0.0);
-	glRotatef(angle, 0.0, 1.0, 0.0);
-	glScalef(zoom, zoom, zoom);
-	myObj.drawGouraud();
-	glPopMatrix();
-	glutSwapBuffers();
-}
-
-
-
-
 void keyboard (unsigned char key, int x, int y)
 {
 	char filename[256];
@@ -152,13 +124,7 @@ void keyboard (unsigned char key, int x, int y)
 		break;
 	case 'g':
 	case 'G':
-		Gouraud = !Gouraud;
-		if (Gouraud){
-			glutDisplayFunc(displayGouraud);
-		}
-		else {
-			glutDisplayFunc(display);
-		}
+		myObj.Gouraud = !myObj.Gouraud;
 		break;
 	case 'r':
 	case 'R':

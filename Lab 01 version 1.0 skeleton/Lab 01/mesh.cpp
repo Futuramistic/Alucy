@@ -24,8 +24,9 @@
 
 using namespace std;
 
-
-
+/**
+ ** Draws mesh onto the viewport 
+ **/
 void myObjType::draw() {
 	glEnable(GL_LIGHTING);
 
@@ -41,9 +42,11 @@ void myObjType::draw() {
 	for (int i = 1; i <= tcount; i++)
 	{
 		glBegin(GL_POLYGON);
-// uncomment the following after you computed the normals
 		glNormal3dv(nlist[i]);
 		for (int j = 0; j < 3; j++) {
+			if (Gouraud) {
+				glNormal3dv(vnlist[tlist[i][j]]);
+			}
 			glVertex3dv(vlist[tlist[i][j]]);
 		}
 		glEnd();
@@ -53,33 +56,9 @@ void myObjType::draw() {
 	glPopMatrix();
 }
 
-void myObjType::drawGouraud() {
-	glEnable(GL_LIGHTING);
-
-	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-
-	glPushMatrix();
-	double longestSide = 0.0;
-	for (int i = 0; i < 3; i++)
-		if ((lmax[i] - lmin[i]) > longestSide)
-			longestSide = (lmax[i] - lmin[i]);
-	glScalef(4.0 / longestSide, 4.0 / longestSide, 4.0 / longestSide);
-	glTranslated(-(lmin[0] + lmax[0]) / 2.0, -(lmin[1] + lmax[1]) / 2.0, -(lmin[2] + lmax[2]) / 2.0);
-	for (int i = 1; i <= tcount; i++)
-	{
-		glBegin(GL_POLYGON);
-		for (int j = 0; j < 3; j++) {
-			glNormal3dv(vnlist[tlist[i][j]]);
-			glVertex3dv(vlist[tlist[i][j]]);
-		}
-		glEnd();
-
-	}
-	displayBoundries();
-	glDisable(GL_LIGHTING);
-	glPopMatrix();
-}
-
+/**
+ ** Draws boundary edges on the mesh
+ **/
 void myObjType::displayBoundries() {
 	if (boundry){
 		float mat_ambient[] = { 1.0f, 0.0f, 0.0f, 1.0f };
@@ -95,6 +74,11 @@ void myObjType::displayBoundries() {
 	}
 }
 
+/**
+ ** Writes mesh into an .obj file
+ ** param:
+ ** - filename [*char] - name of a file to write to finished with '.obj'
+ **/
 void myObjType::writeFile(char* filename)
 {
 	std::ofstream outfile;
@@ -110,6 +94,11 @@ void myObjType::writeFile(char* filename)
 	outfile.close();
 }
 
+/**
+ ** Read mesh from an .obj file
+ ** param:
+ ** - filename [*char] - name of a file to read from finished with '.obj'
+ **/
 void myObjType::readFile(char* filename)
 {
 	cout << "Opening " << filename << endl;
@@ -173,11 +162,14 @@ void myObjType::readFile(char* filename)
 
 		}
 	}
-
-	// We suggest you to compute the normals here
 	computeInfo();
 }
 
+/**
+ ** Compute mesh information.
+ ** Information include:
+ ** normals, boundaries, components, angles, fnext table
+ **/
 void myObjType::computeInfo(){
 	getNeighbours();
 	computeTrianglesNormals();
@@ -190,6 +182,11 @@ void myObjType::computeInfo(){
 	computeStat();
 }
 
+/**
+ ** Find origin of oriTri representation
+ ** param:
+ ** - ot [OrTri]: oriTri number
+ **/
 int myObjType::org(OrTri ot) {
 	int v = ver(ot);
 	int id = idx(ot);
@@ -201,6 +198,11 @@ int myObjType::org(OrTri ot) {
 	}
 }
 
+/**
+ ** Find destination of oriTri representation
+ ** param:
+ ** - ot [OrTri]: oriTri number
+ **/
 int myObjType::dest(OrTri ot) {
 	int v = ver(ot);
 	int id = idx(ot);
@@ -213,6 +215,9 @@ int myObjType::dest(OrTri ot) {
 
 }
 
+/**
+ ** Compute fnext table
+ **/
 void myObjType::findFNext(){
 	for (int i = 1; i <=tcount; ++i) {
 		for (int j = 0; j < 3; ++j) {
@@ -242,7 +247,7 @@ void myObjType::findFNext(){
 					int id = idx(found_oriTri);
 					int v = ver(found_oriTri);
 					fnlist[i][j] = found_oriTri;
-					fnlist[id][v%3] = oriTri;
+					fnlist[id][v%3] = sym(oriTri);
 					hashMap.erase(it2);
 				}
 				else {
@@ -262,12 +267,20 @@ void myObjType::findFNext(){
 	
 }
 
+/**
+ ** Compute all triangles normals
+ **/
 void myObjType::computeTrianglesNormals() {
 	for (int i = 1; i <= tcount; ++i) {
 		computeTriangleNormal(i);
 	}
 }
 
+/**
+ ** Compute triangle normal
+ ** param:
+ ** - i [int]: triangle index
+ **/
 void myObjType::computeTriangleNormal(int i) {
 	double ax = vlist[tlist[i][1]][0] - vlist[tlist[i][0]][0];
 	double ay = vlist[tlist[i][1]][1] - vlist[tlist[i][0]][1];
@@ -292,6 +305,11 @@ void myObjType::computeTriangleNormal(int i) {
 	nlist[i][2] = nz;
 }
 
+/**
+ ** Compute triangle normal
+ ** param:
+ ** - vertex1, vertex2, vertex3 [double[3]] - vertices
+ **/
 std::vector<double> myObjType::computeTriangleNormal(double vertex1[3], double vertex2[3], double vertex3[3]) {
 	double ax = vertex2[0] - vertex1[0];
 	double ay = vertex2[1] - vertex1[1];
@@ -315,8 +333,16 @@ std::vector<double> myObjType::computeTriangleNormal(double vertex1[3], double v
 }
 
 
-
+/**
+ ** Compute mesh angles statistics
+ **/
 void myObjType::computeAngles() {
+	for (int i = 0; i < 18; ++i) {
+		statMinAngle[i] = 0;
+		statMaxAngle[i] = 0;
+	}
+	maxAngle = 0;
+	minAngle = 180;
 	for (int i = 1; i <= tcount; ++i) {
 		int minBucket=18;
 		int maxBucket = 0;
@@ -371,6 +397,9 @@ void myObjType::computeAngles() {
 	}
 }
 
+/**
+ ** Compute mesh components
+ **/
 void myObjType::computeComponents() {
 	clist.clear();
 	std::set<int> triangles;
@@ -399,20 +428,9 @@ void myObjType::computeComponents() {
 	}
 }
 
-void myObjType::PrintInfo() {
-	std::ofstream outfile;
-	outfile.open("log.txt", std::ios::out);
-	std::string strbuff;
-	for (int i = 1; i <= tcount; ++i) {
-		outfile << "Triangle: " << i<<": "<<endl;
-		for (int j = 0; j < 3; ++j) {
-			 outfile<<"Vertex: "<< tlist[i][j] << endl;
-		}
-		outfile << endl;
-	}
-	outfile.close();
-}
-
+/**
+ ** Compute and display mesh statistics
+ **/
 void myObjType::computeStat()
 {
 	int i;
@@ -432,6 +450,9 @@ void myObjType::computeStat()
 	cout << "Boundry edges: " << boundrylist.size() << endl;
 }
 
+/**
+ ** Orient triangles
+ **/
 void myObjType::orientTriangles(){
 	if (!orientable) {
 		cout << "ERROR: MESH CANNOT BE ORIENTED" << endl;
@@ -472,12 +493,23 @@ void myObjType::orientTriangles(){
 	computeVertexNormals();
 }
 
+/**
+ ** Make the boundary visible or not
+ **/
 bool myObjType::toggleBoundry() {
 	boundry = !boundry;
 	return boundry;
 }
 
+/**
+ ** Compute normals for each vertex
+ **/
 void myObjType::computeVertexNormals() {
+	for (int i = 1; i <= vcount; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			vnlist[i][j] = 0;
+		}
+	}
 	for (int i = 1; i <= tcount; ++i) {
 		for (int j = 0; j < 3; ++j){
 			int triangle = i;
@@ -507,6 +539,9 @@ void myObjType::computeVertexNormals() {
 	}
 }
 
+/**
+ ** Find boudary edges
+ **/
 void myObjType::computeBoundryEdges(){
 	boundrylist.clear();
 	boundryVertices.clear();
@@ -522,6 +557,9 @@ void myObjType::computeBoundryEdges(){
 	}
 }
 
+/**
+ ** Compute neighbours for each vertex
+ **/
 void myObjType::getNeighbours() {
 	for (int i = 1; i <= vcount; ++i) {
 		neighbours[i].clear();
@@ -539,7 +577,11 @@ void myObjType::getNeighbours() {
 	}
 }
 
-
+/**
+ ** Simplify mesh to desired number of faces
+ ** param:
+ ** -faceCount [int] - number of faces to simplify to
+ **/
 void myObjType::simplifyMesh(int faceCount) {
 	while (tcount > faceCount) {
 		getNeighbours();
@@ -555,9 +597,15 @@ void myObjType::simplifyMesh(int faceCount) {
 		}
 		collapse(vertex, collapseList[vertex]);
 	}
+	orientable = 1;
 	computeInfo();
 }
 
+/**
+ ** Delete vertex from mesh
+ ** param:
+ ** - vertex [int]: vertex index
+ **/
 void myObjType::deleteVertex(int vertex){
 	if (vertex > 0) {
 		//Move all indexes by one if bigger than vertex
@@ -579,10 +627,20 @@ void myObjType::deleteVertex(int vertex){
 	return;
 }
 
+/**
+ ** Check if triangle has vertex
+ ** param:
+ ** -vertex [int]: vertex index to check for
+ ** -triangle [int]: triangle index to check in
+ **/
 bool myObjType::hasVertex(int vertex, int triangle) {
 	return (tlist[triangle][0] == vertex || tlist[triangle][1] == vertex || tlist[triangle][2] == vertex);
 }
 
+/**
+ ** Delete triangle from mesh
+ ** -triangle [int]: triangle index
+ **/
 void myObjType::deleteTriangle(int triangle) {
 	//Move all the triangles
 	if (triangle > 0) {
@@ -595,6 +653,12 @@ void myObjType::deleteTriangle(int triangle) {
 	}
 }
 
+/**
+ ** Half-collapse edge
+ ** param:
+ ** -vertex [int]: vertex to be collapsed
+ ** -neighbour [int]: vertex to collapse into
+ **/
 void myObjType::collapse(int vertex, int neighbour) {
 	if (neighbour == -1) {
 		deleteVertex(vertex);
@@ -618,6 +682,13 @@ void myObjType::collapse(int vertex, int neighbour) {
 	deleteVertex(vertex);
 }
 
+/**
+ ** Replace vertex with neighbour in triangle
+ ** param:
+ ** -triangle [int]: triangle index
+ ** -vertex [int]: vertex to be replaced
+ ** -neighbour [int]: vertex to replace with
+ **/
 void myObjType::replace(int triangle,int vertex, int neighbour) {
 	if(tlist[triangle][0]==vertex){
 		tlist[triangle][0] = neighbour;
@@ -630,6 +701,11 @@ void myObjType::replace(int triangle,int vertex, int neighbour) {
 	}
 }
 
+/**
+ ** Compute smallest edge cost for vertex
+ ** param:
+ ** -vertex [int]: vertex to compute the cost for
+ **/
 void myObjType::computeEdgeCost(int vertex) {
 	if (neighbours[vertex].size() == 0) {
 		collapseList[vertex] = -1;
@@ -647,6 +723,11 @@ void myObjType::computeEdgeCost(int vertex) {
 	}
 }
 
+/**
+ ** Compute edge collapse cost
+ ** param:
+ ** -vertex, neighbour [int]: edge to compute for
+ **/
 double myObjType::computeEdgeCollapseCost(int vertex, int neighbour) {
 	double edgeLength = sqrt((vlist[vertex][0]-vlist[neighbour][0])*(vlist[vertex][0]-vlist[neighbour][0]) + 
 							 (vlist[vertex][1]-vlist[neighbour][1])*(vlist[vertex][1]-vlist[neighbour][1]) + 
@@ -670,6 +751,11 @@ double myObjType::computeEdgeCollapseCost(int vertex, int neighbour) {
 	return (edgeLength*curvature)/(std::pow(facelist[vertex].size(),2));
 }
 
+/**
+ ** Copy coordinates of even vertices
+ ** param:
+ ** -traingle [int]: index of triangle to copy the vertices from
+ **/
 void myObjType::copyEven(int triangle) {
 	//Don't move the previous vertices
 	for (int i = 0; i < 3; ++i) {
@@ -679,6 +765,11 @@ void myObjType::copyEven(int triangle) {
 	}
 }
 
+/**
+ ** Compute even vertices based on loop subdivison algorithm
+ ** param:
+ ** -traingle [int]: index of triangle to compute the vertices for
+ **/
 void myObjType::computeEven(int triangle) {
 	for (int j = 0; j < 3; ++j) {
 		if (vlooplist[tlist[triangle][j]][0] == 0) {
@@ -752,6 +843,12 @@ void myObjType::computeEven(int triangle) {
 	}
 }
 
+/**
+ ** Compute the odd vertices based on loop algorithm
+ ** param:
+ ** -traingle [int]: index of triangle to copy the vertices from
+ ** -odds [map<pair<int,int>,int>]: previously computed odd vertices
+ **/
 int myObjType::computeOdd(int triangle, int j, std::map<std::pair<int, int>, int> &odds) {
 	if (idx(fnlist[triangle][j]) == triangle) {
 			++vcount;
@@ -801,7 +898,9 @@ int myObjType::computeOdd(int triangle, int j, std::map<std::pair<int, int>, int
 	}
 }
 
-
+/**
+ ** Subdivide the mesh based on loop subdivision algorithm
+ **/
 void myObjType::loopSubdivide(){
 	std::map<std::pair<int, int>, int> odds =  std::map<std::pair<int, int>, int>();
 	getNeighbours();
@@ -818,6 +917,9 @@ void myObjType::loopSubdivide(){
 	computeInfo();
 }
 
+/**
+ ** Clear loop arrays
+ **/
 void myObjType::clearLoop() {
 	for (int i = 1; i <= vcount; ++i) {
 		vlist[i][0] = vlooplist[i][0];
@@ -837,6 +939,9 @@ void myObjType::clearLoop() {
 	}
 }
 
+/**
+ ** Make traingles for loop subdivision algorithm
+ **/
 void myObjType::mergeTriangles(int i, int odd[3]){
 	int odd1 = odd[0];
 	int odd2 = odd[1];
@@ -897,7 +1002,11 @@ void myObjType::mergeTriangles(int i, int odd[3]){
 	}
 }
 
-
+/**
+ ** Load an ASCII STL file
+ ** param:
+ ** -fname [char*]: name of an stl file to load (should finish with .stl)
+ **/
 void myObjType::loadSTL(char* fname) {
 	ifstream myFile(fname);
 	if (!myFile) {
@@ -979,4 +1088,3 @@ void myObjType::loadSTL(char* fname) {
 	computeInfo();
 	return;
 }
-

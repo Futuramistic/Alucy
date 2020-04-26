@@ -25,7 +25,7 @@ inline OrTri sym(OrTri ot) { int v = ver(ot); return v < 3 ? ot + 3 : ot - 3; };
 
 class myObjType {
 	int vcount = 0;
-
+	
 	double vlist[MAXV][3]; // vertices list
 	double vlooplist[MAXV][3];
 	int tlist[MAXT][3];      // triangle list
@@ -33,8 +33,6 @@ class myObjType {
 	int fnlist[MAXT][3];     // fnext list for future (not this assignment)
 	double nlist[MAXT][3];   // storing triangle normals
 	double vnlist[MAXV][3];  // storing vertex normals 
-	
-
 	
 	std::vector<std::pair<int, int>> boundrylist; //storing boundry edges
 	std::vector<std::set<int>> clist; //storing component lists
@@ -60,13 +58,16 @@ class myObjType {
 public:
 	myObjType() { vcount = 0; tcount = 0; };
 	int tcount=0;
+	bool Gouraud = false;
 	void readFile(char* filename);  // assumming file contains a manifold
 	void loadSTL(char* filename);
 	void orientTriangles();
 	void writeFile(char* filename);
-	void PrintInfo();
 	void draw();
-	void drawGouraud();
+	void loopSubdivide();
+	bool toggleBoundry();
+	void simplifyMesh(int faceCount);
+private:
 	void computeStat();
 	void computeInfo();
 	void computeTrianglesNormals();
@@ -76,30 +77,22 @@ public:
 	void clearLoop();
 	std::vector<double> computeTriangleNormal(double vertex1[3], double vertex2[3], double vertex3[3]);
 	void mergeTriangles(int i, int odd[3]);
-	int computeOdd(int triangle,int j, std::map<std::pair<int, int>, int> &odds);
+	int computeOdd(int triangle, int j, std::map<std::pair<int, int>, int>& odds);
 	void computeEven(int triangle);
-	void loopSubdivide();
 	void deleteVertex(int vertex);
 	void deleteTriangle(int triangle);
 	bool hasVertex(int vertex, int triangle);
 	void computeAngles();
 	void computeTriangleNormal(int i);
-	float parseFloat(std::ifstream& s);
-	void parseNormal(int triangle, std::ifstream& s);
-	void parsePoint(int triangle, int vertexPos, std::ifstream& s);
-	
 	int org(OrTri ot);
 	int dest(OrTri ot);
 	void findFNext();
 	void displayBoundries();
 	void computeComponents();
 	void getNeighbours();
-	bool toggleBoundry();
-	void simplifyMesh(int faceCount);
 	void computeEdgeCost(int vertex);
 	double computeEdgeCollapseCost(int vertex, int neighbour);
 	void collapse(int vertex, int neighbour);
-	void printNeighbours();
 	void replace(int triangle,int vertex, int neighbour);
 };
 
