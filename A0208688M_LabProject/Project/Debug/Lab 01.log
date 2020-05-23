@@ -1,0 +1,17 @@
+﻿  main.cpp
+D:\Lab 01 version 1.0 skeleton\Alucy\A0208688M_LabProject\Lab 01\main.cpp(161,32): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+D:\Lab 01 version 1.0 skeleton\Alucy\A0208688M_LabProject\Lab 01\main.cpp(199,33): warning C4244: '+=': conversion from 'double' to 'GLfloat', possible loss of data
+  mesh.cpp
+D:\Lab 01 version 1.0 skeleton\Alucy\A0208688M_LabProject\Lab 01\mesh.cpp(40,53): warning C4244: 'argument': conversion from 'double' to 'GLfloat', possible loss of data
+D:\Lab 01 version 1.0 skeleton\Alucy\A0208688M_LabProject\Lab 01\mesh.cpp(40,34): warning C4244: 'argument': conversion from 'double' to 'GLfloat', possible loss of data
+D:\Lab 01 version 1.0 skeleton\Alucy\A0208688M_LabProject\Lab 01\mesh.cpp(40,15): warning C4244: 'argument': conversion from 'double' to 'GLfloat', possible loss of data
+D:\Lab 01 version 1.0 skeleton\Alucy\A0208688M_LabProject\Lab 01\mesh.cpp(69,21): warning C4018: '<': signed/unsigned mismatch
+D:\Lab 01 version 1.0 skeleton\Alucy\A0208688M_LabProject\Lab 01\mesh.cpp(153,29): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+D:\Lab 01 version 1.0 skeleton\Alucy\A0208688M_LabProject\Lab 01\mesh.cpp(380,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+D:\Lab 01 version 1.0 skeleton\Alucy\A0208688M_LabProject\Lab 01\mesh.cpp(381,15): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
+D:\Lab 01 version 1.0 skeleton\Alucy\A0208688M_LabProject\Lab 01\mesh.cpp(673,19): warning C4018: '<': signed/unsigned mismatch
+D:\Lab 01 version 1.0 skeleton\Alucy\A0208688M_LabProject\Lab 01\mesh.cpp(676,23): warning C4018: '<': signed/unsigned mismatch
+D:\Lab 01 version 1.0 skeleton\Alucy\A0208688M_LabProject\Lab 01\mesh.cpp(744,21): warning C4018: '<': signed/unsigned mismatch
+D:\Lab 01 version 1.0 skeleton\Alucy\A0208688M_LabProject\Lab 01\mesh.cpp(794,23): warning C4018: '<': signed/unsigned mismatch
+  Generating Code...
+  Lab 01.vcxproj -> D:\Lab 01 version 1.0 skeleton\Alucy\A0208688M_LabProject\Debug\Lab 01.exe
