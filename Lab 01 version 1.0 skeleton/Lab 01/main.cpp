@@ -91,37 +91,10 @@ void display(void)
 	glutSwapBuffers ();
 }
 
-void displayGouraud(void)
-{
-
-	float mat_specular[] = { 0.3f, 0.3f, 0.3f, 1.0f };
-	float mat_ambient[] = { 0.3f, 0.3f, 0.3f, 1.0f };
-	float mat_ambient_color[] = { 0.8f, 0.8f, 0.2f, 1.0f };
-	float mat_diffuse[] = { 0.1f, 0.5f, 0.8f, 1.0f };
-	float shininess = 20;
-	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
-
-	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-	glMaterialf(GL_FRONT, GL_SHININESS, shininess);
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glPushMatrix();
-	gluLookAt(0, 0, 10, 0, 0, 0, 0, 1, 0);
-	glRotatef(angle2, 1.0, 0.0, 0.0);
-	glRotatef(angle, 0.0, 1.0, 0.0);
-	glScalef(zoom, zoom, zoom);
-	myObj.drawGouraud();
-	glPopMatrix();
-	glutSwapBuffers();
-}
-
-
-
-
 void keyboard (unsigned char key, int x, int y)
 {
 	char filename[256];
+	bool boundary;
 	switch (key) {
 	case 'p':
 	case 'P':
@@ -151,13 +124,7 @@ void keyboard (unsigned char key, int x, int y)
 		break;
 	case 'g':
 	case 'G':
-		Gouraud = !Gouraud;
-		if (Gouraud){
-			glutDisplayFunc(displayGouraud);
-		}
-		else {
-			glutDisplayFunc(display);
-		}
+		myObj.Gouraud = !myObj.Gouraud;
 		break;
 	case 'r':
 	case 'R':
@@ -165,7 +132,15 @@ void keyboard (unsigned char key, int x, int y)
 		break;
 	case 'b':
 	case 'B':
-		myObj.toggleBoundry();
+		boundary = myObj.toggleBoundry();
+		cout << "BOUNDARY: ";
+		if (boundary) {
+			cout << "ON";
+		}
+		else{
+			cout << "OFF";
+		}
+		cout << endl;
 		break;
 	case '1':
 	case '2':
@@ -178,7 +153,17 @@ void keyboard (unsigned char key, int x, int y)
 	case 'q':
 		exit(0);
 	break;
-
+	case 'T':
+	case 't':
+		cout << "Enter the percentage you want to simplify to:";
+		double percentage;
+		cin >> percentage;
+		myObj.simplifyMesh(percentage*myObj.tcount);
+		break;
+	case 'F':
+	case 'f':
+		myObj.loopSubdivide();
+		break;
 	default:
 	break;
 	}
@@ -228,7 +213,14 @@ int main(int argc, char **argv)
 
 	cout << "Enter the filename you want to open:";
 	cin >> filename;
-	myObj.readFile(filename);
+	string extension = ((string)filename).substr(((string)filename).find_last_of(".") + 1);
+	if ( extension == "stl") {
+		myObj.loadSTL(filename);
+	}
+	else{
+		myObj.readFile(filename);
+	}
+	
 
 
 
@@ -242,6 +234,8 @@ int main(int argc, char **argv)
 	cout << "R: Orient normals" << endl;
 	cout << "G: Toggle Gouraud shading" << endl;
 	cout << "B: Toggle Components Boundries" << endl;
+	cout << "T: Simplify Mesh" << endl;
+	cout << "F: Loop Subdivide" << endl;
 	cout << "O: Write to file" << endl << endl;
 
 	cout << "Left mouse click and drag: rotate the object"<<endl;
